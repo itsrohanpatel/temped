@@ -54,9 +54,16 @@ const EmailEditorUtils = {
      * @param {string} type - Type of notification ('success', 'error', 'warning', 'info')
      * @param {number} duration - Duration in milliseconds
      */
+    /**
+     * Show a notification message
+     * @param {string} message - The message to display
+     * @param {string} type - Type of notification ('success', 'error', 'warning', 'info')
+     * @param {number} duration - Duration in milliseconds
+     */
     showNotification(message, type = 'success', duration = CONSTANTS.NOTIFICATION_DURATION_MS) {
         const notification = document.getElementById('notification');
         const notificationText = document.getElementById('notification-text');
+        const notificationIcon = document.getElementById('notification-icon');
         
         if (!notification) {
             console.warn('Notification element not found');
@@ -64,24 +71,31 @@ const EmailEditorUtils = {
         }
         
         // Set icon based on type
-        let icon = 'fa-check-circle';
+        let iconClass = 'fa-check-circle';
         let bgColor = 'var(--color-carrot-orange)';
         
         switch (type) {
             case 'error':
-                icon = 'fa-exclamation-circle';
+                iconClass = 'fa-exclamation-circle';
                 bgColor = 'var(--color-poppy)';
                 break;
             case 'warning':
-                icon = 'fa-exclamation-triangle';
+                iconClass = 'fa-exclamation-triangle';
                 bgColor = 'var(--color-carrot-orange)';
                 break;
             case 'info':
-                icon = 'fa-info-circle';
+                iconClass = 'fa-info-circle';
+                bgColor = 'var(--color-blue-violet)';
+                break;
+            default:
                 bgColor = 'var(--color-blue-violet)';
                 break;
         }
         
+        if (notificationIcon) {
+            notificationIcon.className = `fas ${iconClass}`;
+        }
+
         if (notificationText) {
             notificationText.textContent = message;
         } else {
@@ -90,12 +104,74 @@ const EmailEditorUtils = {
         
         notification.style.backgroundColor = bgColor;
         notification.style.display = 'flex';
-        notification.classList.remove('hidden');
+        notification.classList.remove('hidden', 'opacity-0', 'translate-x-12');
+        notification.classList.add('opacity-100', 'translate-x-0');
         
-        setTimeout(() => {
-            notification.style.display = 'none';
-            notification.classList.add('hidden');
+        // Clear any previous timer if attached
+        if (notification._hideTimer) {
+            clearTimeout(notification._hideTimer);
+        }
+
+        notification._hideTimer = setTimeout(() => {
+            notification.classList.remove('opacity-100', 'translate-x-0');
+            notification.classList.add('opacity-0', 'translate-x-12');
+            setTimeout(() => {
+                notification.style.display = 'none';
+                notification.classList.add('hidden');
+            }, 300);
         }, duration);
+    },
+
+    /**
+     * Escape regular expression metacharacters
+     * @param {string} str - Raw string
+     * @returns {string} Escaped string safe for RegExp
+     */
+    escapeRegex(str) {
+        if (!str) return '';
+        return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    },
+
+    /**
+     * Render template with variables supporting {{name}} and {{name|fallback}}
+     * @param {string} template - The template string
+     * @param {Map|Object} variableMap - Map or object of variable key-values
+     * @returns {string} Interpolated string
+     */
+    renderVariablesWithFallbacks(template, variableMap) {
+        if (!template) return '';
+        const getVal = (k) => {
+            if (variableMap instanceof Map) return variableMap.get(k);
+            if (variableMap && typeof variableMap === 'object') return variableMap[k];
+            return undefined;
+        };
+
+        // Match {{variable_name}} or {{variable_name|fallback_text}}
+        return template.replace(/\{\{([^{}|]+)(?:\|([^{}]+))?\}\}/g, (match, varName, fallback) => {
+            const trimmedName = varName.trim();
+            const val = getVal(trimmedName);
+            if (val !== undefined && val !== null && String(val).trim() !== '') {
+                return String(val);
+            }
+            return fallback !== undefined ? fallback : '';
+        });
+    },
+
+    /**
+     * Extract unique variable names from text, including fallback syntax
+     * @param {string} text - Template content
+     * @returns {Array<string>} Array of variable names
+     */
+    findVariablesInText(text) {
+        if (!text) return [];
+        const matches = text.matchAll(/\{\{([^{}|]+)(?:\|[^{}]+)?\}\}/g);
+        const names = new Set();
+        for (const m of matches) {
+            if (m[1] && m[1].trim()) {
+                names.add(m[1].trim());
+            }
+        }
+        return Array.from(names);
     },
     
     /**
