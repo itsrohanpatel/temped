@@ -324,6 +324,19 @@ describe('EmailEditorUtils Core Tests', () => {
             const res = utils.validateSubjectLine('');
             expect(res.warnings).toContain('Subject line is empty');
         });
+
+        it('cleanPastedHtml strips Gemini, Angular, and dark web styles cleanly', () => {
+            expect(utils.cleanPastedHtml('')).toBe('');
+            const dirtyGemini = `<p _ngcontent-ng-c958567356="" class="ng-star-inserted" style="background-color: rgb(38, 45, 61); color: rgb(212, 212, 212); -webkit-tap-highlight-color: transparent; font-size: 14px;"><ms-cmark-node style="display: contents;"><span class="ng-star-inserted">Hi Hiring Manager,</span></ms-cmark-node></p><ul class="ng-star-inserted"><li class="ng-star-inserted"><p>Achievement 1</p></li></ul>`;
+            const clean = utils.cleanPastedHtml(dirtyGemini);
+            expect(clean).not.toContain('_ngcontent');
+            expect(clean).not.toContain('ng-star-inserted');
+            expect(clean).not.toContain('ms-cmark-node');
+            expect(clean).not.toContain('background-color: rgb(38, 45, 61)');
+            expect(clean).not.toContain('color: rgb(212, 212, 212)');
+            expect(clean).toContain('Hi Hiring Manager,');
+            expect(clean).toContain('<li>Achievement 1</li>');
+        });
     });
 });
 

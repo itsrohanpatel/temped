@@ -412,6 +412,10 @@
                         <div class="flex items-center justify-between px-3 py-2 bg-slate-950/80 border-b border-slate-800">
                             <div class="flex items-center gap-2">
                                 <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-800 text-slate-300 mono uppercase tracking-wider">HTML</span>
+                                <button id="clean-pasted-html-btn" class="text-amber-300 hover:text-amber-200 text-[10px] font-semibold py-0.5 px-2 rounded bg-amber-950/60 hover:bg-amber-900/80 transition-all border border-amber-800/80 flex items-center gap-1 cursor-pointer" title="Clean Web/AI Paste (Strips Gemini, ChatGPT, Angular & Word junk)">
+                                    <i class="fas fa-broom text-[10px]"></i>
+                                    <span>Clean Paste</span>
+                                </button>
                             </div>
                             <div class="flex items-center space-x-1.5">
                                 <button id="copy-subject-btn" class="text-slate-300 hover:text-white text-[11px] font-semibold py-1 px-2.5 rounded bg-slate-800 hover:bg-slate-700 transition-all border border-slate-700" title="Copy Rendered Subject Line">
@@ -1295,12 +1299,28 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     preflightBtn: document.getElementById('preflight-inspector-btn'),
                     exportMenuBtn: document.getElementById('export-menu-btn'),
                     exportDropdownMenu: document.getElementById('export-dropdown-menu'),
+                    cleanPastedHtmlBtn: document.getElementById('clean-pasted-html-btn'),
                 };
             },
 
             bindEvents() {
                 // Existing events
                 this.nodes.addVariableBtn.addEventListener('click', () => this.addVariableRow());
+
+                // Clean pasted HTML button
+                if (this.nodes.cleanPastedHtmlBtn) {
+                    this.nodes.cleanPastedHtmlBtn.addEventListener('click', () => this.cleanEditorHtml());
+                }
+
+                // Auto-detect and clean dirty web/AI paste
+                this.nodes.htmlInput.addEventListener('paste', (e) => {
+                    const text = (e.clipboardData || window.clipboardData)?.getData('text');
+                    if (text && (text.includes('_ngcontent') || text.includes('ms-cmark-node') || text.includes('ng-star-inserted') || text.includes('rgb(38, 45, 61)'))) {
+                        setTimeout(() => {
+                            this.cleanEditorHtml();
+                        }, 50);
+                    }
+                });
                 
                 // Debounce heavy operations on input
                 const debouncedRender = window.EmailEditorUtils?.debounce(() => {
@@ -1570,6 +1590,25 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 this.showNotification('Added compliance footer!');
                 if (document.getElementById('preflight-modal') && !document.getElementById('preflight-modal').classList.contains('hidden')) {
                     this.runPreflightInspection();
+                }
+            },
+
+            cleanEditorHtml() {
+                const raw = this.nodes.htmlInput ? this.nodes.htmlInput.value : '';
+                if (!raw || !raw.trim()) {
+                    this.showNotification('Editor is empty.', 'info');
+                    return;
+                }
+                const cleaned = window.EmailEditorUtils?.cleanPastedHtml ? 
+                    window.EmailEditorUtils.cleanPastedHtml(raw) : raw;
+                if (cleaned !== raw) {
+                    this.nodes.htmlInput.value = cleaned;
+                    this.renderPreview();
+                    this.updateWordCount();
+                    this.saveToLocalStorage();
+                    this.showNotification('Cleaned web and AI markup artifacts!');
+                } else {
+                    this.showNotification('HTML is already clean and email-ready.', 'info');
                 }
             },
 

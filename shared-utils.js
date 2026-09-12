@@ -267,6 +267,45 @@ const EmailEditorUtils = {
     },
 
     /**
+     * Cleans rich-text HTML copied from web apps (Gemini, ChatGPT, Angular, MS Word)
+     * Strips proprietary custom tags, angular directives, dark-theme web styles, and redundant spans.
+     * @param {string} html - Raw copied HTML
+     * @returns {string} Clean, email-safe HTML
+     */
+    cleanPastedHtml(html) {
+        if (!html) return '';
+        let clean = html;
+
+        // Unwrap custom web components / markdown nodes (e.g., Gemini's <ms-cmark-node>)
+        clean = clean.replace(/<\/?(?:ms-cmark-node|ng-container|c-wiz)[^>]*>/gi, '');
+
+        // Remove Angular & web framework component attributes & classes
+        clean = clean.replace(/\s+_ngcontent-[a-zA-Z0-9_-]+=""/gi, '');
+        clean = clean.replace(/\s+_nghost-[a-zA-Z0-9_-]+=""/gi, '');
+        clean = clean.replace(/\s+class="[^"]*ng-star-inserted[^"]*"/gi, '');
+        clean = clean.replace(/\s+class=""/gi, '');
+
+        // Strip web dark-mode backgrounds, web text colors, and tap highlight artifacts
+        clean = clean.replace(/background-color:\s*rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\);?/gi, '');
+        clean = clean.replace(/color:\s*rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\);?/gi, '');
+        clean = clean.replace(/-webkit-tap-highlight-color:\s*[^;"]+;?/gi, '');
+        clean = clean.replace(/font-optical-sizing:\s*[^;"]+;?/gi, '');
+        clean = clean.replace(/display:\s*contents;?/gi, '');
+
+        // Unwrap redundant spans that have empty style or no attributes
+        clean = clean.replace(/<span\s*>([\s\S]*?)<\/span>/gi, '$1');
+        clean = clean.replace(/<span\s+style="\s*"\s*>([\s\S]*?)<\/span>/gi, '$1');
+
+        // Simplify list item nested paragraphs (e.g. <li><p>Text</p></li> -> <li>Text</li>)
+        clean = clean.replace(/<li\b[^>]*>\s*<p\b[^>]*>([\s\S]*?)<\/p>\s*<\/li>/gi, '<li>$1</li>');
+
+        // Clean leftover empty style attributes
+        clean = clean.replace(/\s+style="\s*"/gi, '');
+
+        return clean.trim();
+    },
+
+    /**
      * Builds regex matching whole words with safe escaping
      * @param {string} word - Keyword
      * @returns {RegExp|null}
