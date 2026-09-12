@@ -27,6 +27,25 @@ describe('EmailEditorUtils Core Tests', () => {
             expect(escaped).toContain('&quot;');
             expect(escaped).toContain('&amp;');
         });
+
+        it('sanitizes html with fallback when DOMPurify is absent', () => {
+            const originalPurify = window.DOMPurify;
+            delete window.DOMPurify;
+            expect(utils.sanitizeHtml('')).toBe('');
+            const dirty = '<script>evil()</script><a href="javascript:alert(1)" onclick="steal()">Link</a>';
+            const cleaned = utils.sanitizeHtml(dirty);
+            expect(cleaned).not.toContain('<script>');
+            expect(cleaned).not.toContain('javascript:');
+            expect(cleaned).not.toContain('onclick=');
+            window.DOMPurify = originalPurify;
+        });
+
+        it('builds word regex for words starting and ending with word characters', () => {
+            const reg = utils.buildWordRegex('discount');
+            expect(reg.test('Huge discount today')).toBe(true);
+            expect(reg.test('nodiscount')).toBe(false);
+            expect(utils.buildWordRegex('')).toBeNull();
+        });
     });
 
     describe('escapeRegex', () => {
@@ -130,5 +149,94 @@ describe('EmailEditorUtils Core Tests', () => {
             expect(n.classList.contains('hidden')).toBe(true);
             vi.useRealTimers();
         });
+
+        it('supports error, warning, and info notification types', () => {
+            utils.showNotification('Error occurred', 'error');
+            const n = document.getElementById('notification');
+            expect(n.style.backgroundColor).toContain('var(--color-poppy)');
+
+            utils.showNotification('Warning note', 'warning');
+            expect(n.style.backgroundColor).toContain('var(--color-carrot-orange)');
+
+            utils.showNotification('Info note', 'info');
+            expect(n.style.backgroundColor).toContain('var(--color-blue-violet)');
+        });
+
+        it('handles missing notification element gracefully without throwing', () => {
+            document.body.innerHTML = '';
+            expect(() => utils.showNotification('Testing missing DOM')).not.toThrow();
+        });
+    });
+
+    describe('Variable validation & discovery', () => {
+        it('validates variable names correctly', () => {
+            expect(utils.validateVariableName('').isValid).toBe(false);
+            expect(utils.validateVariableName('123abc').isValid).toBe(false);
+            expect(utils.validateVariableName('has space').isValid).toBe(false);
+            expect(utils.validateVariableName('has-dash').isValid).toBe(false);
+            expect(utils.validateVariableName('valid_var_1').isValid).toBe(true);
+        });
+
+        it('finds all variable names in text', () => {
+            expect(utils.findVariablesInText('')).toEqual([]);
+            const found = utils.findVariablesInText('Hi {{first_name}}, see {{item|product}} at {{link}}');
+            expect(found).toEqual(['first_name', 'item', 'link']);
+        });
+    });
+
+    describe('Debounce utility', () => {
+        it('debounces multiple calls', () => {
+            vi.useFakeTimers();
+            let count = 0;
+            const debounced = utils.debounce(() => { count++; }, 100);
+            debounced();
+            debounced();
+            debounced();
+            expect(count).toBe(0);
+            vi.advanceTimersByTime(150);
+            expect(count).toBe(1);
+            vi.useRealTimers();
+        });
+    });
+
+    describe('Storage utilities', () => {
+        beforeEach(() => {
+            localStorage.clear();
+        });
+
+        it('reads and writes standard storage items', () => {
+            expect(utils.getStorageItem('nonexistent', 'default')).toBe('default');
+            utils.setStorageItem('test_key', 'test_val');
+            expect(utils.getStorageItem('test_key')).toBe('test_val');
+        });
+
+        it('reads and writes JSON storage items', () => {
+            const data = { a: 1, b: 'hello' };
+            utils.setStorageJSON('json_key', data);
+            expect(utils.getStorageJSON('json_key')).toEqual(data);
+        });
+
+        it('returns default value when stored JSON is corrupted', () => {
+            localStorage.setItem('corrupted', '{invalid-json');
+            expect(utils.getStorageJSON('corrupted', { fallback: true })).toEqual({ fallback: true });
+        });
+
+        it('handles storage read/write exceptions safely', () => {
+            const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+                throw new Error('Quota exceeded');
+            });
+            const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+                throw new Error('Storage disabled');
+            });
+
+            expect(utils.setStorageItem('key', 'val')).toBe(false);
+            expect(utils.getStorageItem('key', 'safe_default')).toBe('safe_default');
+            expect(utils.setStorageJSON('key', {})).toBe(false);
+            expect(utils.getStorageJSON('key', 'safe_json')).toBe('safe_json');
+
+            setItemSpy.mockRestore();
+            getItemSpy.mockRestore();
+        });
     });
 });
+
