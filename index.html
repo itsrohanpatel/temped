@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="shared-styles.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <script src="shared-utils.js"></script>
     <script type="importmap">
 {
@@ -259,6 +260,10 @@
                         <i class="fas fa-folder text-slate-400"></i>
                         <span>Templates</span>
                     </a>
+                    <button id="starter-templates-btn" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 flex items-center gap-1.5 cursor-pointer shadow-xs" title="Explore Curated Starter Templates">
+                        <i class="fas fa-magic text-indigo-500"></i>
+                        <span>Starters</span>
+                    </button>
                     <a href="settings.html" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
                         <i class="fas fa-cog text-slate-400"></i>
                         <span>Settings</span>
@@ -342,6 +347,9 @@
                         <button id="load-template-btn" class="btn btn-secondary text-xs px-2.5 py-1.5 text-slate-700">
                             <i class="fas fa-folder-open mr-1 text-indigo-500"></i> Load
                         </button>
+                        <button id="starter-gallery-btn" class="btn btn-secondary text-xs px-2.5 py-1.5 text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100 border-indigo-200">
+                            <i class="fas fa-magic mr-1 text-indigo-500"></i> Starters
+                        </button>
                         <a href="templates.html" id="manage-templates-btn" class="btn btn-secondary text-xs px-2.5 py-1.5 text-slate-700">
                             <i class="fas fa-database mr-1 text-slate-500"></i> Library
                         </a>
@@ -389,6 +397,14 @@
                         <button class="toolbar-btn" data-command="removeFormat" aria-label="Clear formatting" title="Clear Formatting"><i class="fas fa-eraser"></i></button>
                         <button id="undo-btn" class="toolbar-btn" aria-label="Undo" title="Undo (Ctrl+Z)"><i class="fas fa-undo"></i></button>
                         <button id="redo-btn" class="toolbar-btn" aria-label="Redo" title="Redo (Ctrl+Y)"><i class="fas fa-redo"></i></button>
+                        <div class="h-4 border-l border-slate-300 mx-0.5"></div>
+                        <select id="insert-component-select" class="toolbar-select font-medium text-indigo-700 bg-indigo-50 border-indigo-200" title="Insert Bulletproof Email Component">
+                            <option value="">+ Insert Component...</option>
+                            <option value="bulletproofButton">Outlook Button (MSO)</option>
+                            <option value="twoColumnGrid">2-Column Responsive Grid</option>
+                            <option value="divider">Section Divider</option>
+                            <option value="complianceFooter">Compliance Footer</option>
+                        </select>
                     </div>
 
                     <!-- Code Container with Action Buttons Header -->
@@ -407,6 +423,28 @@
                                 <button id="copy-html-btn" class="text-white text-[11px] font-semibold py-1 px-3 rounded bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm" title="Copy HTML with Preheader">
                                     <i class="fas fa-copy mr-1"></i>Copy HTML
                                 </button>
+                                <div class="relative inline-block text-left" id="export-dropdown-container">
+                                    <button id="export-menu-btn" class="text-white text-[11px] font-semibold py-1 px-2.5 rounded bg-emerald-600 hover:bg-emerald-500 transition-all shadow-sm flex items-center gap-1 cursor-pointer" title="Export Production Files">
+                                        <i class="fas fa-file-export"></i>
+                                        <span>Export</span>
+                                        <i class="fas fa-chevron-down text-[9px]"></i>
+                                    </button>
+                                    <div id="export-dropdown-menu" class="hidden absolute right-0 mt-1.5 w-48 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl z-40 py-1.5 text-xs text-slate-200">
+                                        <button id="export-html-btn" class="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 cursor-pointer">
+                                            <i class="fas fa-code text-indigo-400 w-4"></i> Download HTML (.html)
+                                        </button>
+                                        <button id="export-txt-btn" class="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 cursor-pointer">
+                                            <i class="fas fa-file-alt text-emerald-400 w-4"></i> Plain Text (.txt)
+                                        </button>
+                                        <button id="export-eml-btn" class="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 cursor-pointer">
+                                            <i class="fas fa-envelope text-amber-400 w-4"></i> Test Email (.eml)
+                                        </button>
+                                        <div class="border-t border-slate-800 my-1"></div>
+                                        <button id="copy-rendered-btn" class="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 cursor-pointer">
+                                            <i class="fas fa-paste text-rose-400 w-4"></i> Copy Rendered Text
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -525,6 +563,12 @@
                                 <i class="fas fa-shield-alt text-emerald-600"></i>
                                 <span id="health-score-val">100/100</span>
                                 <span id="health-score-grade" class="hidden sm:inline">Great</span>
+                            </button>
+
+                            <!-- Pre-Flight Deliverability Inspector Button -->
+                            <button id="preflight-inspector-btn" class="px-2.5 py-1 text-xs font-bold rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-all flex items-center gap-1 shadow-xs cursor-pointer" title="Pre-Flight Deliverability Inspector">
+                                <i class="fas fa-clipboard-check text-indigo-600"></i>
+                                <span class="hidden sm:inline">Pre-Flight</span>
                             </button>
                         </div>
                     </div>
@@ -785,6 +829,152 @@
                         <li>Test your layout on mobile (375px) to ensure no overflowing elements.</li>
                     </ul>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pre-Flight Deliverability Inspector Modal -->
+    <div id="preflight-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center hidden z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="preflight-modal-title">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 text-indigo-600 text-base">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <div>
+                        <h2 id="preflight-modal-title" class="text-base font-bold text-slate-900">Pre-Flight Deliverability Inspector</h2>
+                        <p class="text-[11px] text-slate-500">Comprehensive inbox readiness and anti-clipping audit</p>
+                    </div>
+                </div>
+                <button id="close-preflight-modal" class="text-slate-400 hover:text-slate-600 text-sm p-1">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="py-4 space-y-4 overflow-y-auto custom-scrollbar pr-1 flex-grow">
+                <!-- Summary Banner -->
+                <div id="preflight-summary-banner" class="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Audit Status</div>
+                        <div class="text-xl font-black text-slate-900 flex items-center gap-2 mt-0.5">
+                            <span id="preflight-checks-ratio">5/5 Passed</span>
+                            <span id="preflight-size-display" class="text-xs font-normal text-slate-500 mono">(0.0 KB)</span>
+                        </div>
+                    </div>
+                    <div id="preflight-overall-badge" class="px-3 py-1 rounded-full text-xs font-bold status-pill-pass">
+                        Ready to Send
+                    </div>
+                </div>
+
+                <!-- Individual Check Cards -->
+                <div class="space-y-2.5" id="preflight-checks-list">
+                    <!-- Size / Gmail Clipping -->
+                    <div class="p-3.5 rounded-xl border border-slate-200 bg-white" id="preflight-check-size">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-weight-hanging text-indigo-500 text-sm w-4"></i>
+                                <span class="text-xs font-bold text-slate-800">Gmail 102KB Clipping Safety</span>
+                            </div>
+                            <span class="status-pill px-2 py-0.5 rounded text-[11px] font-semibold status-pill-pass" id="preflight-badge-size">PASS</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1.5" id="preflight-msg-size">Calculated payload is well below Gmail's 102KB cutoff limit.</p>
+                    </div>
+
+                    <!-- CAN-SPAM / GDPR -->
+                    <div class="p-3.5 rounded-xl border border-slate-200 bg-white" id="preflight-check-compliance">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-balance-scale text-emerald-500 text-sm w-4"></i>
+                                <span class="text-xs font-bold text-slate-800">CAN-SPAM & GDPR Requirements</span>
+                            </div>
+                            <span class="status-pill px-2 py-0.5 rounded text-[11px] font-semibold status-pill-pass" id="preflight-badge-compliance">PASS</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1.5" id="preflight-msg-compliance">Includes opt-out / unsubscribe link and sender address.</p>
+                    </div>
+
+                    <!-- Image Alt Text -->
+                    <div class="p-3.5 rounded-xl border border-slate-200 bg-white" id="preflight-check-alt">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-image text-amber-500 text-sm w-4"></i>
+                                <span class="text-xs font-bold text-slate-800">Image Alt Text Accessibility</span>
+                            </div>
+                            <span class="status-pill px-2 py-0.5 rounded text-[11px] font-semibold status-pill-pass" id="preflight-badge-alt">PASS</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1.5" id="preflight-msg-alt">All images include descriptive alt attributes.</p>
+                    </div>
+
+                    <!-- Links Quality -->
+                    <div class="p-3.5 rounded-xl border border-slate-200 bg-white" id="preflight-check-links">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-link text-blue-500 text-sm w-4"></i>
+                                <span class="text-xs font-bold text-slate-800">Link Security & Placeholders</span>
+                            </div>
+                            <span class="status-pill px-2 py-0.5 rounded text-[11px] font-semibold status-pill-pass" id="preflight-badge-links">PASS</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1.5" id="preflight-msg-links">All hyperlinks use secure HTTPS protocol with valid destinations.</p>
+                    </div>
+
+                    <!-- Text-to-HTML Ratio -->
+                    <div class="p-3.5 rounded-xl border border-slate-200 bg-white" id="preflight-check-ratio">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-percentage text-purple-500 text-sm w-4"></i>
+                                <span class="text-xs font-bold text-slate-800">Text-to-HTML Ratio</span>
+                            </div>
+                            <span class="status-pill px-2 py-0.5 rounded text-[11px] font-semibold status-pill-pass" id="preflight-badge-ratio">PASS</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1.5" id="preflight-msg-ratio">Healthy text content to markup ratio.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <button id="preflight-insert-footer-btn" class="btn btn-secondary text-xs py-1.5 px-3 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200">
+                    <i class="fas fa-plus mr-1"></i> Add Missing Footer
+                </button>
+                <div class="flex items-center gap-2">
+                    <button id="preflight-rerun-btn" class="btn btn-secondary text-xs py-1.5 px-3">
+                        <i class="fas fa-sync-alt mr-1"></i> Re-Scan
+                    </button>
+                    <button id="preflight-close-btn" class="btn btn-primary text-xs py-1.5 px-4">
+                        Done
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Starter Template Gallery Modal -->
+    <div id="starter-templates-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center hidden z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="starter-templates-title">
+        <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 text-indigo-600 text-base">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    <div>
+                        <h2 id="starter-templates-title" class="text-base font-bold text-slate-900">Starter Template Gallery</h2>
+                        <p class="text-[11px] text-slate-500">Pick a production-ready, deliverability-optimized starting layout</p>
+                    </div>
+                </div>
+                <button id="close-starters-modal" class="text-slate-400 hover:text-slate-600 text-sm p-1">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Templates Grid -->
+            <div class="py-4 overflow-y-auto custom-scrollbar pr-1 flex-grow">
+                <div id="starter-templates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Rendered dynamically by EmailEditor.renderStarterTemplatesModal() -->
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex justify-end">
+                <button id="close-starters-btn" class="btn btn-secondary text-xs py-1.5 px-4">
+                    Close
+                </button>
             </div>
         </div>
     </div>
@@ -1099,6 +1289,12 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     copyFeedback: document.getElementById('copy-feedback'),
                     senderInitial: document.getElementById('sender-initial'),
                     toolbar: document.getElementById('toolbar'),
+                    insertComponentSelect: document.getElementById('insert-component-select'),
+                    starterTemplatesBtn: document.getElementById('starter-templates-btn'),
+                    starterGalleryBtn: document.getElementById('starter-gallery-btn'),
+                    preflightBtn: document.getElementById('preflight-inspector-btn'),
+                    exportMenuBtn: document.getElementById('export-menu-btn'),
+                    exportDropdownMenu: document.getElementById('export-dropdown-menu'),
                 };
             },
 
@@ -1139,6 +1335,49 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 this.nodes.toolbar.addEventListener('change', e => {
                     const commandElement = e.target.closest('[data-command]');
                     if (commandElement) this.applyCommand(commandElement);
+                });
+
+                // Component Inserter
+                if (this.nodes.insertComponentSelect) {
+                    this.nodes.insertComponentSelect.addEventListener('change', (e) => {
+                        this.insertComponent(e.target.value);
+                    });
+                }
+
+                // Export Suite Events
+                if (this.nodes.exportMenuBtn) {
+                    this.nodes.exportMenuBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.nodes.exportDropdownMenu?.classList.toggle('hidden');
+                    });
+                }
+                document.getElementById('export-html-btn')?.addEventListener('click', () => this.exportHtmlFile());
+                document.getElementById('export-txt-btn')?.addEventListener('click', () => this.exportTxtFile());
+                document.getElementById('export-eml-btn')?.addEventListener('click', () => this.exportEmlFile());
+                document.getElementById('copy-rendered-btn')?.addEventListener('click', () => this.copyRenderedToClipboard());
+                window.addEventListener('click', (e) => {
+                    if (!e.target.closest('#export-dropdown-container')) {
+                        this.nodes.exportDropdownMenu?.classList.add('hidden');
+                    }
+                });
+
+                // Starter Templates Gallery Events
+                this.nodes.starterTemplatesBtn?.addEventListener('click', () => this.showStarterTemplatesModal());
+                this.nodes.starterGalleryBtn?.addEventListener('click', () => this.showStarterTemplatesModal());
+                document.getElementById('close-starters-modal')?.addEventListener('click', () => this.hideStarterTemplatesModal());
+                document.getElementById('close-starters-btn')?.addEventListener('click', () => this.hideStarterTemplatesModal());
+                document.getElementById('starter-templates-modal')?.addEventListener('click', (e) => {
+                    if (e.target.id === 'starter-templates-modal') this.hideStarterTemplatesModal();
+                });
+
+                // Pre-Flight Inspector Events
+                this.nodes.preflightBtn?.addEventListener('click', () => this.showPreflightModal());
+                document.getElementById('close-preflight-modal')?.addEventListener('click', () => this.hidePreflightModal());
+                document.getElementById('preflight-close-btn')?.addEventListener('click', () => this.hidePreflightModal());
+                document.getElementById('preflight-rerun-btn')?.addEventListener('click', () => this.runPreflightInspection());
+                document.getElementById('preflight-insert-footer-btn')?.addEventListener('click', () => this.insertComplianceFooter());
+                document.getElementById('preflight-modal')?.addEventListener('click', (e) => {
+                    if (e.target.id === 'preflight-modal') this.hidePreflightModal();
                 });
 
                 // New template management events
@@ -1299,6 +1538,269 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                         modalFindings.appendChild(item);
                     }
                 }
+            },
+
+            insertComponent(componentKey) {
+                if (!componentKey || !window.EmailComponentSnippets) return;
+                const snippet = window.EmailComponentSnippets[componentKey];
+                if (!snippet) return;
+                
+                const textarea = this.nodes.htmlInput;
+                const startPos = textarea.selectionStart ?? textarea.value.length;
+                const endPos = textarea.selectionEnd ?? textarea.value.length;
+                const currentVal = textarea.value;
+                
+                textarea.value = currentVal.substring(0, startPos) + '\n' + snippet + '\n' + currentVal.substring(endPos);
+                textarea.selectionStart = textarea.selectionEnd = startPos + snippet.length + 2;
+                textarea.focus();
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                if (this.nodes.insertComponentSelect) {
+                    this.nodes.insertComponentSelect.value = '';
+                }
+                this.showNotification('Inserted email component!');
+            },
+
+            insertComplianceFooter() {
+                if (!window.EmailComponentSnippets?.complianceFooter) return;
+                const footer = window.EmailComponentSnippets.complianceFooter;
+                const textarea = this.nodes.htmlInput;
+                textarea.value = (textarea.value.trim() + '\n\n' + footer).trim();
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                this.showNotification('Added compliance footer!');
+                if (document.getElementById('preflight-modal') && !document.getElementById('preflight-modal').classList.contains('hidden')) {
+                    this.runPreflightInspection();
+                }
+            },
+
+            getRenderedHtmlWithPreheader() {
+                const preheader = this.nodes.preheaderInput ? this.nodes.preheaderInput.value.trim() : '';
+                let html = this.nodes.htmlInput.value;
+                
+                const variables = this.getVariables();
+                for (const [key, value] of variables) {
+                    const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+                    html = html.replace(regex, value);
+                }
+                
+                if (preheader && !html.includes(preheader)) {
+                    const safePreheader = window.EmailEditorUtils?.escapeAttr ? window.EmailEditorUtils.escapeAttr(preheader) : preheader;
+                    const preheaderSnippet = `\n<div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${safePreheader}</div>\n`;
+                    html = preheaderSnippet + html;
+                }
+                return html;
+            },
+
+            exportHtmlFile() {
+                const html = this.getRenderedHtmlWithPreheader();
+                const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'email-template.html';
+                a.click();
+                URL.revokeObjectURL(url);
+                this.showNotification('Downloaded HTML file!');
+                document.getElementById('export-dropdown-menu')?.classList.add('hidden');
+            },
+
+            exportTxtFile() {
+                const html = this.getRenderedHtmlWithPreheader();
+                const txt = window.EmailExportTools ? window.EmailExportTools.generatePlainText(html) : (this.nodes.emailPreview?.innerText || '');
+                const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'email-template.txt';
+                a.click();
+                URL.revokeObjectURL(url);
+                this.showNotification('Downloaded plain text version!');
+                document.getElementById('export-dropdown-menu')?.classList.add('hidden');
+            },
+
+            exportEmlFile() {
+                const html = this.getRenderedHtmlWithPreheader();
+                const subject = this.getRenderedSubjectLine() || 'Test Email';
+                const recipient = this.nodes.recipientEmail?.textContent?.trim() || 'recipient@example.com';
+                const emlContent = window.EmailExportTools ? 
+                    window.EmailExportTools.generateEml({
+                        from: 'sender@example.com',
+                        to: recipient,
+                        subject: subject,
+                        html: html
+                    }) : '';
+                const blob = new Blob([emlContent], { type: 'message/rfc822;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${subject.replace(/[^a-z0-9_-]+/gi, '-').toLowerCase() || 'email'}.eml`;
+                a.click();
+                URL.revokeObjectURL(url);
+                this.showNotification('Downloaded RFC-822 test email (.eml)!');
+                document.getElementById('export-dropdown-menu')?.classList.add('hidden');
+            },
+
+            copyRenderedToClipboard() {
+                const text = this.nodes.emailPreview?.innerText || '';
+                navigator.clipboard.writeText(text).then(() => {
+                    this.showNotification('Rendered text copied to clipboard!');
+                    document.getElementById('export-dropdown-menu')?.classList.add('hidden');
+                }).catch(() => {
+                    this.showNotification('Failed to copy text', 'error');
+                });
+            },
+
+            showPreflightModal() {
+                this.runPreflightInspection();
+                document.getElementById('preflight-modal')?.classList.remove('hidden');
+            },
+
+            hidePreflightModal() {
+                document.getElementById('preflight-modal')?.classList.add('hidden');
+            },
+
+            runPreflightInspection() {
+                if (!window.PreFlightInspector) return;
+                const html = this.nodes.htmlInput?.value || '';
+                const subject = this.nodes.subjectLineInput?.value || '';
+                const plainText = this.nodes.emailPreview?.innerText || '';
+                
+                const report = window.PreFlightInspector.runAllChecks(html, {
+                    subject: subject,
+                    plainText: plainText
+                });
+
+                const checksRatio = document.getElementById('preflight-checks-ratio');
+                const sizeDisplay = document.getElementById('preflight-size-display');
+                const overallBadge = document.getElementById('preflight-overall-badge');
+
+                if (checksRatio) {
+                    checksRatio.textContent = `${report.passedCount}/${report.totalCount} Passed`;
+                }
+                if (sizeDisplay) {
+                    sizeDisplay.textContent = `(${report.checks.size.formattedSize})`;
+                }
+                if (overallBadge) {
+                    if (report.overallStatus === 'ready') {
+                        overallBadge.className = 'px-3 py-1 rounded-full text-xs font-bold status-pill-pass';
+                        overallBadge.textContent = 'Ready to Send';
+                    } else if (report.overallStatus === 'warning') {
+                        overallBadge.className = 'px-3 py-1 rounded-full text-xs font-bold status-pill-warn';
+                        overallBadge.textContent = 'Review Warnings';
+                    } else {
+                        overallBadge.className = 'px-3 py-1 rounded-full text-xs font-bold status-pill-fail';
+                        overallBadge.textContent = 'Action Required';
+                    }
+                }
+
+                const updateCard = (key, badgeId, msgId, cardId) => {
+                    const check = report.checks[key];
+                    if (!check) return;
+                    const badge = document.getElementById(badgeId);
+                    const msg = document.getElementById(msgId);
+                    const card = document.getElementById(cardId);
+                    
+                    if (badge) {
+                        badge.textContent = check.status.toUpperCase();
+                        badge.className = `status-pill px-2 py-0.5 rounded text-[11px] font-semibold ${
+                            check.status === 'pass' ? 'status-pill-pass' : (check.status === 'warn' ? 'status-pill-warn' : 'status-pill-fail')
+                        }`;
+                    }
+                    if (msg) msg.textContent = check.message;
+                    if (card) {
+                        card.className = `p-3.5 rounded-xl border ${
+                            check.status === 'pass' ? 'border-slate-200 bg-white' : (check.status === 'warn' ? 'border-amber-200 bg-amber-50/30' : 'border-rose-200 bg-rose-50/30')
+                        }`;
+                    }
+                };
+
+                updateCard('size', 'preflight-badge-size', 'preflight-msg-size', 'preflight-check-size');
+                updateCard('compliance', 'preflight-badge-compliance', 'preflight-msg-compliance', 'preflight-check-compliance');
+                updateCard('altText', 'preflight-badge-alt', 'preflight-msg-alt', 'preflight-check-alt');
+                updateCard('links', 'preflight-badge-links', 'preflight-msg-links', 'preflight-check-links');
+                updateCard('ratio', 'preflight-badge-ratio', 'preflight-msg-ratio', 'preflight-check-ratio');
+            },
+
+            showStarterTemplatesModal() {
+                this.renderStarterTemplatesModal();
+                document.getElementById('starter-templates-modal')?.classList.remove('hidden');
+            },
+
+            hideStarterTemplatesModal() {
+                document.getElementById('starter-templates-modal')?.classList.add('hidden');
+            },
+
+            renderStarterTemplatesModal() {
+                const container = document.getElementById('starter-templates-grid');
+                if (!container || !window.StarterTemplates) return;
+                
+                const starters = window.StarterTemplates.getAll();
+                const escapeHtml = s => (window.EmailEditorUtils ? window.EmailEditorUtils.escapeHtml(s) : s);
+                const escapeAttr = s => (window.EmailEditorUtils ? window.EmailEditorUtils.escapeAttr(s) : s);
+                
+                container.innerHTML = starters.map(tpl => `
+                    <div class="card p-4 flex flex-col justify-between border border-slate-200 hover:border-indigo-300 transition-all shadow-xs">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                    ${escapeHtml(tpl.category)}
+                                </span>
+                                <span class="text-[11px] text-slate-400 font-medium">${tpl.variables.length} vars</span>
+                            </div>
+                            <h3 class="font-bold text-sm text-slate-900 mb-1">${escapeHtml(tpl.name)}</h3>
+                            <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-3">${escapeHtml(tpl.description)}</p>
+                            
+                            <div class="p-2 bg-slate-50 rounded-lg border border-slate-100 mb-3 text-[11px] text-slate-600">
+                                <div class="font-semibold text-slate-500 uppercase text-[9px] mb-0.5">Subject:</div>
+                                <div class="truncate italic font-medium">${escapeHtml(tpl.subject)}</div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex flex-wrap gap-1 mb-3">
+                                ${tpl.variables.slice(0, 3).map(v => `
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600 font-mono">
+                                        {{${escapeHtml(v.name)}}}
+                                    </span>
+                                `).join('')}
+                                ${tpl.variables.length > 3 ? `<span class="text-[10px] text-slate-400 self-center">+${tpl.variables.length - 3}</span>` : ''}
+                            </div>
+                            <button class="btn btn-primary w-full text-xs py-1.5 cursor-pointer" data-starter-id="${escapeAttr(tpl.id)}">
+                                <i class="fas fa-arrow-right mr-1.5"></i> Load Template
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+                container.querySelectorAll('[data-starter-id]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.currentTarget.getAttribute('data-starter-id');
+                        this.loadStarterTemplate(id);
+                    });
+                });
+            },
+
+            loadStarterTemplate(templateId) {
+                if (!window.StarterTemplates) return;
+                const template = window.StarterTemplates.getById(templateId);
+                if (!template) return;
+                
+                this.nodes.variablesContainer.innerHTML = '';
+                this.nodes.subjectLineInput.value = template.subject;
+                if (this.nodes.preheaderInput) {
+                    this.nodes.preheaderInput.value = template.preheader || '';
+                }
+                this.nodes.htmlInput.value = template.html;
+                
+                (template.variables || []).forEach(v => {
+                    this.addVariableRow(v.name, v.defaultValue || '');
+                });
+                
+                this.hideStarterTemplatesModal();
+                this.renderSubjectLine();
+                this.renderPreview();
+                this.saveToLocalStorage();
+                this.showNotification(`Loaded "${template.name}" starter template!`);
             },
 
             cleanHTML(html) {
@@ -1666,13 +2168,17 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
             },
 
             addVariableRow(name = '', value = '') {
+                const safeName = window.EmailEditorUtils ? window.EmailEditorUtils.escapeAttr(name) : String(name).replace(/"/g, '&quot;');
+                const safeValue = window.EmailEditorUtils ? window.EmailEditorUtils.escapeAttr(value) : String(value).replace(/"/g, '&quot;');
                 const row = document.createElement('div');
                 row.className = 'flex items-center space-x-2 variable-row';
                 row.innerHTML = `
-                    <input type=\"text\" value=\"${name}\" placeholder=\"Variable Name\" class=\"variable-name input-field w-1/3 text-sm\">
-                    <span class=\"text-slate-400\">=</span>
-                    <input type=\"text\" value=\"${value}\" placeholder=\"Value\" class=\"variable-value input-field flex-grow text-sm\">
-                    <button class=\"remove-variable-btn text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full\">\n                        <i class=\"fas fa-trash-alt fa-sm\"></i>\n                    </button>
+                    <input type="text" value="${safeName}" placeholder="Variable Name" class="variable-name input-field w-1/3 text-sm">
+                    <span class="text-slate-400">=</span>
+                    <input type="text" value="${safeValue}" placeholder="Value" class="variable-value input-field flex-grow text-sm">
+                    <button class="remove-variable-btn text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full">
+                        <i class="fas fa-trash-alt fa-sm"></i>
+                    </button>
                 `;
                 this.nodes.variablesContainer.appendChild(row);
 
@@ -2031,7 +2537,8 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 const formattedHTML = formatter.call(this, content);
                 
                 document.getElementById('ai-loading').classList.add('hidden');
-                document.getElementById('ai-content').innerHTML = formattedHTML;
+                const sanitizedHTML = window.EmailEditorUtils ? window.EmailEditorUtils.sanitizeHtml(formattedHTML) : formattedHTML;
+                document.getElementById('ai-content').innerHTML = sanitizedHTML;
                 document.getElementById('ai-response').classList.remove('hidden');
             },
 

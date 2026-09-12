@@ -252,3 +252,20 @@ button, .btn, .card, input, select, textarea, a, .template-item, .pill-badge {
 html {
     scroll-behavior: smooth;
 }
+
+/* Status Badges & Pills */
+.status-pill-pass {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+.status-pill-warn {
+    background-color: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+.status-pill-fail {
+    background-color: #fff1f2;
+    color: #9f1239;
+    border: 1px solid #fecdd3;
+}

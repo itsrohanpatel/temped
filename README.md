@@ -3,12 +3,14 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
-![Tests](https://img.shields.io/badge/tests-49%20passed-brightgreen.svg)
-![Coverage](https://img.shields.io/badge/coverage-97.23%25-brightgreen.svg)
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
+![Tests](https://img.shields.io/badge/tests-121%20passed-brightgreen.svg)
+![Coverage](https://img.shields.io/badge/coverage-99.27%25-brightgreen.svg)
+![Branch Coverage](https://img.shields.io/badge/branches-96.00%25-brightgreen.svg)
 ![Architecture](https://img.shields.io/badge/architecture-100%25%20client--side-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-purple.svg)
 
-**A modern, production-ready email template editor, live responsive simulator, and deliverability testing suite with client-side AI optimization.**
+**A modern, production-ready email template editor, live responsive simulator, deliverability testing suite, and pre-flight inspector with client-side AI optimization.**
 
 [Live Demo](https://itsrohanpatel.github.io/temped/) · [Report Bug](https://github.com/itsrohanpatel/temped/issues) · [Feature Request](https://github.com/itsrohanpatel/temped/issues)
 
@@ -20,13 +22,43 @@
 
 **TempEd** is a zero-server, high-performance email authoring environment that replicates the most valuable features of industry leaders like Litmus, Mailmeteor, and Stripo directly in the browser. 
 
-Craft beautiful emails, preview responsiveness across devices, simulate dark mode, inspect deliverability health scores in real time, and auto-detect template variables with fallback support — all while keeping your data 100% local and private.
+Craft beautiful emails, preview responsiveness across devices, simulate dark mode, run pre-flight clipping checks, inspect deliverability health scores in real time, and auto-detect template variables with fallback support — all while keeping your data 100% local and private.
 
 ---
 
 ## ✨ Key Features
 
-### 🛡️ 1. Deliverability Health Scorer (0–100)
+### ✈️ 1. Pre-Flight Deliverability & Clipping Inspector
+- **Gmail 102KB Clipping Alert**: Accurately calculates byte size to warn before Gmail clips your email with `[Message clipped] View entire message`.
+- **CAN-SPAM & GDPR Compliance**: Validates opt-out unsubscribe links and physical postal mailing address presence.
+- **Image Accessibility & Alt Text**: Scans all `<img>` tags for missing or blank alt attributes that degrade accessibility and trigger spam filters.
+- **Insecure Link & Placeholder Audit**: Identifies unencrypted `http://` links and empty `href="#"` buttons.
+- **Text-to-Code Ratio**: Analyzes markup density to flag image-heavy or markup-bloated templates.
+- **Health Verdict Scorecard**: Consolidated modal report (`Ready to Send`, `Good with Warnings`, `Needs Attention`).
+
+### 📦 2. Curated Responsive Starter Template Library
+- **6 Production-Ready Templates**:
+  - `Welcome & Onboarding` (SaaS activation flow with social links)
+  - `Product Announcement` (Modern feature launch with badge and feature grid)
+  - `Tech Newsletter / Digest` (Curated article layout with author avatar)
+  - `Transactional Password Reset` (Clean security alert with action button and expiry notice)
+  - `Order Receipt & Confirmation` (Itemized billing table with totals and delivery details)
+  - `Webinar / Event Invitation` (Date pill, speaker callout, and calendar CTA)
+- **One-Click Gallery & Seeding**: Load templates into the editor instantly or seed your personal library from `templates.html`.
+
+### 🧩 3. Bulletproof Component Inserters
+- **Outlook MSO Bulletproof Button**: Renders via VML `v:roundrect` with fallback CSS for 100% button consistency across Outlook 2016/2019/365.
+- **Responsive 2-Column Grid**: Dual-stack layout tables that fluidly collapse to 100% width on mobile viewports.
+- **Content Divider**: Borderless, client-safe separator line.
+- **CAN-SPAM Compliance Footer**: Pre-configured unsubscribe mechanism and postal address layout.
+
+### 💾 4. Production Export Suite
+- **Download HTML**: Bundles sanitized email HTML with inbox preheader snippet.
+- **Plain Text (`.txt`) Generator**: Strips tags while structuring headers, converting hyperlinks to `Text (URL)`, and formatting bullet points for text-only clients.
+- **RFC-822 MIME Test Email (`.eml`)**: Exports ready-to-open test email files compatible with Apple Mail, Thunderbird, and Outlook.
+- **Copy Rendered Text & Subject**: Instant clipboard tools for quick QA testing.
+
+### 🛡️ 5. Deliverability Health Scorer (0–100)
 - **Real-Time Score & Letter Grades**: Calculates health in real time (`Great` 80–100, `Okay` 50–79, `Poor` <50).
 - **Curated Spam Trigger Analysis**: Powered by 820+ verified spam trigger patterns, filtering out false-positive conversational terms.
 - **Diagnostic Breakdown Modal**:
@@ -37,37 +69,32 @@ Craft beautiful emails, preview responsiveness across devices, simulate dark mod
   - Excessive punctuation penalty (e.g. `!!!`, `???`, `$$$`).
   - Read time and word count estimators.
 
-### 📱 2. Viewport Device Simulator & Dark Mode
+### 📱 6. Viewport Device Simulator & Dark Mode
 - **Responsive Viewport Switcher**: Instant one-click preview frames:
   - **Desktop** (600px width — standard email layout width)
   - **Tablet** (768px width)
   - **Mobile** (375px width — iOS/Android viewport)
 - **Dark Mode Simulation**: Toggle dark mode in the preview container to verify background contrast, button legibility, and text invertibility before sending.
 
-### ✉️ 3. Inbox Preheader / Preview Text Injection
+### ✉️ 7. Inbox Preheader / Preview Text Injection
 - Define preview text that displays next to or beneath your subject line in Gmail, Apple Mail, and Outlook.
 - Automatically injected into copied HTML with zero-pixel hidden styling and unicode non-breaking space padding (`&#847;&zwnj;&nbsp;&#8199;&shy;`) to prevent email body content from leaking into the inbox preview snippet.
 
-### 🔄 4. Dynamic Variables with Fallback Syntax & Auto-Discovery
+### 🔄 8. Dynamic Variables with Fallback Syntax & Auto-Discovery
 - **Standard Syntax**: `{{variable_name}}` replaced dynamically in subject and body.
 - **Fallback Syntax**: `{{first_name|there}}` or `{{company|your team}}` renders default values if the recipient data is empty.
 - **Auto-Detect Variables**: One-click scanner that extracts all `{{...}}` tokens from your subject line, preheader, and HTML body, automatically populating the variables manager.
 
-### 📋 5. Multi-Format One-Click Export
-- **Copy HTML**: Exports sanitized HTML with preheader snippet injected into the `<body>`.
-- **Copy Plain Text**: Extracts clean plain text with variables evaluated for non-HTML email clients.
-- **Copy Subject**: Copies the rendered subject line with all variables interpolated.
-
-### 🤖 6. Google Gemini AI Enhancements
+### 🤖 9. Google Gemini AI Enhancements
 - **Content Optimization**: Rephrase emails for engagement, conversion, and clarity.
 - **Deliverability Feedback**: Instant AI suggestions to improve open and click-through rates.
 - **Tone Adjustment**: Switch between professional, casual, urgent, or friendly tones.
 - **Subject Line Generator**: Generate 10+ high-converting subject line variations from your content.
 - **Spam Keyword Rewriter**: Replace flagged phrases with inbox-safe alternatives.
 
-### 🔒 7. Enterprise Security & Sanitization
+### 🔒 10. Enterprise Security & Sanitization
 - **100% Client-Side Architecture**: No template content or API keys are ever sent to a third-party server.
-- **DOMPurify Sanitization**: Strict XSS prevention in template previews and custom spam word managers.
+- **DOMPurify Sanitization**: Strict XSS prevention in template previews, settings signatures, and custom spam word managers.
 - **Attribute Escaping**: Full escaping of dynamic attributes to prevent DOM injection vulnerabilities.
 
 ---
@@ -121,13 +148,13 @@ npm run dev
 Open `http://localhost:3000` in your browser.
 
 ### 3. Running Tests
-Run the 49-test suite with Vitest:
+Run the 121-test suite with Vitest:
 ```bash
 npm test
 ```
 
 ### 4. Test Coverage Report
-Generate the v8 code coverage report (enforces >= 80% coverage):
+Generate the v8 code coverage report (enforces >= 80% coverage across statements, branches, functions, and lines):
 ```bash
 npm run test:coverage
 ```
@@ -148,20 +175,24 @@ npm run preview
 
 ```text
 temped/
-├── index.html               # Main editor, viewport simulator & deliverability health widget
-├── settings.html            # Configuration (API keys, custom spam words, signatures)
-├── templates.html           # Template library with sanitized previews & export
-├── shared-utils.js          # Shared utility methods, variable parser, viewports & sanitization
-├── spam-filter.js           # Deliverability scoring engine & curated spam triggers
-├── shared-styles.css        # Core custom styles & color palette tokens
-├── vite.config.ts           # Multi-page build config & standalone asset emitter
-├── package.json             # Scripts & dependencies
-├── test/                    # Test suites
-│   ├── utils.test.js              # Unit tests for shared utilities (23 tests)
-│   ├── spam-engine.test.js        # Deliverability engine & spam tests (9 tests)
-│   ├── preview-features.test.js   # Preheader, viewports & dark mode tests (7 tests)
-│   └── security-templates.test.js # XSS sanitization & attribute escaping tests (10 tests)
-└── dist/                    # Production bundle output
+├── index.html                  # Main editor, pre-flight inspector & component inserter
+├── settings.html               # Configuration (API keys, custom spam words, signatures)
+├── templates.html              # Template library with starter templates seed & export
+├── shared-utils.js             # Core utilities: PreFlightInspector, StarterTemplates, ExportTools
+├── spam-filter.js              # Deliverability scoring engine & curated spam triggers
+├── shared-styles.css           # Core custom styles & color palette tokens
+├── vite.config.ts              # Multi-page build config & standalone asset emitter
+├── package.json                # Scripts & dependencies
+├── test/                       # Test suites (121 tests)
+│   ├── preflight-inspector.test.js  # Gmail clipping, CAN-SPAM, GDPR, images, links (25 tests)
+│   ├── starter-templates.test.js    # 6 curated starter templates validation (8 tests)
+│   ├── export-tools.test.js         # Plain text, RFC-822 .eml, Outlook MSO buttons (12 tests)
+│   ├── integration-ui.test.js       # End-to-end DOM UI workflow tests (16 tests)
+│   ├── utils.test.js                # Core helpers, variables, viewports, storage (34 tests)
+│   ├── spam-engine.test.js          # Deliverability engine & spam scoring (9 tests)
+│   ├── preview-features.test.js     # Preheader, viewports & dark mode (7 tests)
+│   └── security-templates.test.js   # XSS sanitization & attribute escaping (10 tests)
+└── dist/                       # Production bundle output
 ```
 
 ---
@@ -178,9 +209,12 @@ temped/
 ## 🧪 Quality & Test Standards
 
 This project adheres to strict **Test-Driven Development (TDD)** principles:
-- **49 automated unit and integration tests** passing with 0 failures.
-- **97.23% statement coverage** across application utilities.
-- Tested against Stored/DOM XSS, Unicode mojibake corruptions, attribute breakouts, and regex boundary regressions.
+- **121 automated unit and integration tests** passing with 0 failures.
+- **99.27% statement coverage** (target: >= 80%).
+- **96.00% branch coverage** (target: >= 80%).
+- **100.00% function coverage** (target: >= 80%).
+- **99.27% line coverage** (target: >= 80%).
+- Tested against Stored/DOM XSS, Unicode mojibake corruptions, attribute breakouts, RFC-822 MIME structure, and regex boundary regressions.
 
 ---
 

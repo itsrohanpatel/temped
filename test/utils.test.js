@@ -238,5 +238,92 @@ describe('EmailEditorUtils Core Tests', () => {
             getItemSpy.mockRestore();
         });
     });
+
+    describe('EmailEditorUtils Branch Coverage Edge Cases', () => {
+        it('handles notification when no text container exists and multiple calls clear timer', () => {
+            const notif = document.createElement('div');
+            notif.id = 'notification';
+            document.body.appendChild(notif);
+
+            utils.showNotification('First notice', 'info');
+            expect(notif.textContent).toBe('First notice');
+            expect(notif._hideTimer).toBeDefined();
+
+            utils.showNotification('Second notice', 'success');
+            expect(notif.textContent).toBe('Second notice');
+
+            notif.remove();
+        });
+
+        it('escapeRegex handles falsy and empty values', () => {
+            expect(utils.escapeRegex('')).toBe('');
+            expect(utils.escapeRegex(null)).toBe('');
+        });
+
+        it('renderVariablesWithFallbacks handles various input types and edge cases', () => {
+            expect(utils.renderVariablesWithFallbacks('', {})).toBe('');
+            expect(utils.renderVariablesWithFallbacks('Hello {{name}}', { name: 'Alice' })).toBe('Hello Alice');
+            expect(utils.renderVariablesWithFallbacks('Hello {{missing|Friend}}', {})).toBe('Hello Friend');
+            expect(utils.renderVariablesWithFallbacks('Hello {{missing}}', {})).toBe('Hello ');
+            expect(utils.renderVariablesWithFallbacks('Hello {{val}}', null)).toBe('Hello ');
+        });
+
+        it('findVariablesInText handles empty strings', () => {
+            expect(utils.findVariablesInText('')).toEqual([]);
+            expect(utils.findVariablesInText(null)).toEqual([]);
+        });
+
+        it('injectPreheader handles edge cases and markup without body tag', () => {
+            expect(utils.injectPreheader('', 'preheader')).toBe('');
+            expect(utils.injectPreheader('<p>Content</p>', '')).toBe('<p>Content</p>');
+            const injectedNoBody = utils.injectPreheader('<div>Hello</div>', 'Preview');
+            expect(injectedNoBody).toContain('Preview');
+            expect(injectedNoBody.startsWith('<div style="display:none;')).toBe(true);
+        });
+
+        it('setPreviewViewport handles null container and unknown viewport sizes', () => {
+            expect(() => utils.setPreviewViewport(null, 'desktop')).not.toThrow();
+            const elem = document.createElement('div');
+            utils.setPreviewViewport(elem, 'tablet');
+            expect(elem.style.maxWidth).toBe('768px');
+            utils.setPreviewViewport(elem, 'custom');
+            expect(elem.style.maxWidth).toBe('600px');
+        });
+
+        it('togglePreviewDarkMode handles null element', () => {
+            expect(utils.togglePreviewDarkMode(null)).toBe(false);
+            const elem = document.createElement('div');
+            expect(utils.togglePreviewDarkMode(elem)).toBe(true);
+            expect(utils.togglePreviewDarkMode(elem)).toBe(false);
+        });
+
+        it('autoDiscoverVariables handles empty templates and existing variables', () => {
+            expect(utils.autoDiscoverVariables('', { existing: 'val' })).toEqual({ existing: 'val' });
+        });
+
+        it('sanitizeHtml uses regex fallback when DOMPurify is not available', () => {
+            const originalPurify = window.DOMPurify;
+            delete window.DOMPurify;
+            try {
+                const dirty = '<script>alert(1)</script><a href="#" onclick="evil()">Click</a>';
+                const clean = utils.sanitizeHtml(dirty);
+                expect(clean).not.toContain('<script>');
+                expect(clean).not.toContain('onclick');
+            } finally {
+                window.DOMPurify = originalPurify;
+            }
+        });
+
+        it('buildWordRegex handles non-word start and end patterns', () => {
+            const regex = utils.buildWordRegex('$$$deal!');
+            expect(regex).not.toBeNull();
+            expect('$$$deal!'.match(regex)).toBeTruthy();
+        });
+
+        it('validateSubjectLine handles empty subject lines', () => {
+            const res = utils.validateSubjectLine('');
+            expect(res.warnings).toContain('Subject line is empty');
+        });
+    });
 });
 

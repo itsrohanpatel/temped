@@ -74,6 +74,9 @@
                 <p class="text-sm text-slate-500 mt-1">Manage, preview, and load your custom email marketing and transactional templates.</p>
             </div>
             <div class="flex items-center gap-2">
+                <button id="seed-starter-templates-btn" class="btn btn-secondary text-xs py-2 px-3.5 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200">
+                    <i class="fas fa-magic mr-1.5"></i> Load Starter Templates
+                </button>
                 <a href="index.html" class="btn btn-primary text-xs py-2 px-3.5">
                     <i class="fas fa-plus mr-1.5"></i> Create New Template
                 </a>
@@ -87,10 +90,15 @@
                     <i class="fas fa-box-open text-2xl"></i>
                 </div>
                 <h3 class="text-lg font-bold text-slate-900 mb-1">No templates saved yet</h3>
-                <p class="text-xs text-slate-500 mb-5 max-w-xs">Create and save templates in the editor to build your reusable email library.</p>
-                <a href="index.html" class="btn btn-primary text-xs py-2 px-4">
-                    <i class="fas fa-plus mr-1.5"></i> Open Editor
-                </a>
+                <p class="text-xs text-slate-500 mb-5 max-w-xs">Create and save templates in the editor or seed the 6 production starter templates.</p>
+                <div class="flex items-center justify-center gap-2 flex-wrap">
+                    <button id="empty-seed-btn" class="btn btn-secondary text-xs py-2 px-4 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200">
+                        <i class="fas fa-magic mr-1.5"></i> Seed 6 Starters
+                    </button>
+                    <a href="index.html" class="btn btn-primary text-xs py-2 px-4">
+                        <i class="fas fa-plus mr-1.5"></i> Open Editor
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -151,6 +159,39 @@
             bindEvents() {
                 document.getElementById('close-preview').addEventListener('click', () => this.toggleModal(false));
                 this.modal.addEventListener('click', (e) => { if (e.target === this.modal) this.toggleModal(false); });
+                const seedBtn = document.getElementById('seed-starter-templates-btn');
+                if (seedBtn) seedBtn.addEventListener('click', () => this.seedStarterTemplates());
+                const emptySeedBtn = document.getElementById('empty-seed-btn');
+                if (emptySeedBtn) emptySeedBtn.addEventListener('click', () => this.seedStarterTemplates());
+            },
+            seedStarterTemplates() {
+                if (!window.StarterTemplates) return;
+                const existing = this.getTemplates();
+                const existingNames = new Set(existing.map(t => (t.name || '').toLowerCase()));
+                const starters = window.StarterTemplates.getAll();
+                let addedCount = 0;
+                
+                starters.forEach((s, idx) => {
+                    if (!existingNames.has(s.name.toLowerCase())) {
+                        existing.push({
+                            name: s.name,
+                            subject: s.subject,
+                            preheader: s.preheader,
+                            html: s.html,
+                            variables: s.variables.map(v => ({ name: v.name, value: v.defaultValue })),
+                            timestamp: new Date(Date.now() - idx * 60000).toISOString()
+                        });
+                        addedCount++;
+                    }
+                });
+                
+                this.saveTemplates(existing);
+                this.render();
+                if (addedCount > 0) {
+                    this.notify(`Successfully loaded ${addedCount} starter templates!`);
+                } else {
+                    this.notify('All starter templates are already in your library.');
+                }
             },
             getTemplates() {
                 try {
