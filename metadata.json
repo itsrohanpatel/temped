@@ -1,5 +1,5 @@
 {
-  "name": "template editor pro ",
-  "description": "",
+  "name": "TempEd - Email Template Pro",
+  "description": "Production-ready, client-side email template editor with real-time deliverability health scoring, device viewport simulation, dark mode preview, dynamic variable fallbacks, and Gemini AI optimizations.",
   "requestFramePermissions": []
 }

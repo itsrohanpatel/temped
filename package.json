@@ -1,8 +1,24 @@
 {
-  "name": "template-editor-pro",
+  "name": "temped",
+  "version": "1.0.0",
+  "description": "Production-ready, client-side email template editor with real-time deliverability health scoring, multi-device preview, dark mode simulation, dynamic fallbacks, and Gemini AI optimizations.",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "homepage": "https://github.com/itsrohanpatel/temped",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/itsrohanpatel/temped.git"
+  },
+  "keywords": [
+    "email-editor",
+    "email-template",
+    "deliverability",
+    "spam-filter",
+    "litmus-alternative",
+    "gemini-ai",
+    "vitest"
+  ],
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
