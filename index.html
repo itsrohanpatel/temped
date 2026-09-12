@@ -1212,6 +1212,9 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 this.initHelpModal();
                 this.loadCustomSpamWords();
                 this.initRequestCounter();
+                try {
+                    document.execCommand('defaultParagraphSeparator', false, 'p');
+                } catch (_) {}
                 
                 // Load previous work or use defaults
                 this.loadFromLocalStorage();
@@ -1344,6 +1347,9 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 this.nodes.emailPreview.addEventListener('input', () => {
                     this.styleAllLinks();
                     this.updateSourceFromPreview();
+                });
+                this.nodes.emailPreview.addEventListener('blur', () => {
+                    this.renderPreview(true);
                 });
                 this.nodes.copyHtmlBtn.addEventListener('click', () => this.copyHtmlToClipboard());
 
@@ -2105,7 +2111,15 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 linkTextInput.value = '';
             },
 
-            renderPreview() {
+            renderPreview(force = false) {
+                const isPreviewFocused = !force && (document.activeElement === this.nodes.emailPreview || 
+                                         (this.nodes.emailPreview && this.nodes.emailPreview.contains(document.activeElement)));
+                if (isPreviewFocused) {
+                    this.renderSubjectLine();
+                    this.updateHealthBadgeAndModal();
+                    return;
+                }
+
                 let template = this.nodes.htmlInput.value;
                 const variables = this.getVariables();
 
@@ -2120,14 +2134,18 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 // Render subject line preview with variable replacement
                 this.renderSubjectLine();
                 
-                const selection = this.saveSelection(this.nodes.emailPreview);
+                const isFocused = document.activeElement === this.nodes.emailPreview || 
+                                  (this.nodes.emailPreview && this.nodes.emailPreview.contains(document.activeElement));
+                const selection = isFocused ? this.saveSelection(this.nodes.emailPreview) : null;
                 const safeTemplate = window.EmailEditorUtils ? window.EmailEditorUtils.sanitizeHtml(template) : template;
                 this.nodes.emailPreview.innerHTML = safeTemplate;
                 // Apply spam highlights in the preview before restoring selection
                 this.highlightSpamInPreview();
                 // Apply link styling to all links
                 this.styleAllLinks();
-                this.restoreSelection(this.nodes.emailPreview, selection);
+                if (isFocused && selection) {
+                    this.restoreSelection(this.nodes.emailPreview, selection);
+                }
                 this.updateHealthBadgeAndModal();
             },
             
@@ -2172,7 +2190,6 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
             },
 
             updateSourceFromPreview() {
-                const selection = this.saveSelection(this.nodes.emailPreview);
                 const tempDiv = this.nodes.emailPreview.cloneNode(true);
 
                 tempDiv.querySelectorAll('span[data-variable]').forEach(span => {
@@ -2187,16 +2204,13 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 const newHtml = tempDiv.innerHTML;
                 if (this.nodes.htmlInput.value !== newHtml) {
                     this.nodes.htmlInput.value = newHtml;
-                    $(this.nodes.htmlInput).highlightWithinTextarea('update');
-                    // Trigger the normal pipeline (renderPreview, counts, autosave)
-                    // so that newly typed placeholders like {{name}} in the preview
-                    // are immediately recognized and rendered.
-                    this.nodes.htmlInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    return; // renderPreview will handle highlights and selection restore
+                    if (typeof $(this.nodes.htmlInput).highlightWithinTextarea === 'function') {
+                        $(this.nodes.htmlInput).highlightWithinTextarea('update');
+                    }
+                    this.updateWordCount();
+                    this.saveToLocalStorage();
+                    this.updateHealthBadgeAndModal();
                 }
-                // Reapply preview highlights after syncing source
-                this.highlightSpamInPreview();
-                this.restoreSelection(this.nodes.emailPreview, selection);
             },
 
             getVariables() {
@@ -2244,44 +2258,143 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
 
             saveSelection(containerEl) {
                 const selection = window.getSelection();
-                if (selection.rangeCount === 0) return null;
+                if (!selection || selection.rangeCount === 0) return null;
                 const range = selection.getRangeAt(0);
                 if (!containerEl.contains(range.commonAncestorContainer)) return null;
-                const preSelectionRange = range.cloneRange();
-                preSelectionRange.selectNodeContents(containerEl);
-                preSelectionRange.setEnd(range.startContainer, range.startOffset);
-                const start = preSelectionRange.toString().length;
-                return { start: start, end: start + range.toString().length };
+
+                let charCount = 0;
+                let start = 0;
+                let end = 0;
+                let foundStart = false;
+                let foundEnd = false;
+
+                const walker = document.createTreeWalker(
+                    containerEl,
+                    NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
+                    {
+                        acceptNode: (node) => {
+                            if (node.nodeType === 3) return NodeFilter.FILTER_ACCEPT;
+                            if (node.nodeName === 'BR') return NodeFilter.FILTER_ACCEPT;
+                            return NodeFilter.FILTER_SKIP;
+                        }
+                    }
+                );
+
+                let currentNode = walker.nextNode();
+                while (currentNode) {
+                    if (currentNode === range.startContainer) {
+                        start = charCount + range.startOffset;
+                        foundStart = true;
+                    } else if (currentNode.nodeType === 1 && currentNode === range.startContainer.childNodes[range.startOffset]) {
+                        start = charCount;
+                        foundStart = true;
+                    }
+
+                    if (currentNode === range.endContainer) {
+                        end = charCount + range.endOffset;
+                        foundEnd = true;
+                    } else if (currentNode.nodeType === 1 && currentNode === range.endContainer.childNodes[range.endOffset]) {
+                        end = charCount;
+                        foundEnd = true;
+                    }
+
+                    if (currentNode.nodeType === 3) {
+                        charCount += currentNode.nodeValue.length;
+                    } else if (currentNode.nodeName === 'BR') {
+                        charCount += 1;
+                    }
+
+                    if (foundStart && foundEnd) break;
+                    currentNode = walker.nextNode();
+                }
+
+                if (!foundStart) {
+                    const preSelectionRange = range.cloneRange();
+                    preSelectionRange.selectNodeContents(containerEl);
+                    preSelectionRange.setEnd(range.startContainer, range.startOffset);
+                    start = preSelectionRange.toString().length;
+                    end = start + range.toString().length;
+                }
+
+                return { start, end };
             },
 
             restoreSelection(containerEl, savedSel) {
-                if (!savedSel) return;
+                if (!savedSel || typeof savedSel.start !== 'number') return;
                 let charIndex = 0;
                 const range = document.createRange();
-                range.setStart(containerEl, 0);
-                range.collapse(true);
-                const nodeStack = [containerEl];
-                let node, foundStart = false, stop = false;
-                while (!stop && (node = nodeStack.pop())) {
-                    if (node.nodeType === 3) {
-                        const nextCharIndex = charIndex + node.length;
-                        if (!foundStart && savedSel.start >= charIndex && savedSel.start <= nextCharIndex) {
-                            range.setStart(node, savedSel.start - charIndex);
-                            foundStart = true;
+                let foundStart = false;
+                let foundEnd = false;
+                let lastNode = containerEl;
+
+                const walker = document.createTreeWalker(
+                    containerEl,
+                    NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
+                    {
+                        acceptNode: (node) => {
+                            if (node.nodeType === 3) return NodeFilter.FILTER_ACCEPT;
+                            if (node.nodeName === 'BR') return NodeFilter.FILTER_ACCEPT;
+                            return NodeFilter.FILTER_SKIP;
                         }
-                        if (foundStart && savedSel.end >= charIndex && savedSel.end <= nextCharIndex) {
-                            range.setEnd(node, savedSel.end - charIndex);
-                            stop = true;
-                        }
-                        charIndex = nextCharIndex;
-                    } else {
-                        let i = node.childNodes.length;
-                        while (i--) nodeStack.push(node.childNodes[i]);
                     }
+                );
+
+                let currentNode = walker.nextNode();
+                while (currentNode) {
+                    lastNode = currentNode;
+                    const len = currentNode.nodeType === 3 ? currentNode.nodeValue.length : 1;
+                    const nextCharIndex = charIndex + len;
+
+                    if (!foundStart && savedSel.start >= charIndex && savedSel.start <= nextCharIndex) {
+                        if (currentNode.nodeType === 3) {
+                            range.setStart(currentNode, Math.min(savedSel.start - charIndex, currentNode.nodeValue.length));
+                        } else {
+                            range.setStartBefore(currentNode);
+                        }
+                        foundStart = true;
+                    }
+
+                    if (!foundEnd && savedSel.end >= charIndex && savedSel.end <= nextCharIndex) {
+                        if (currentNode.nodeType === 3) {
+                            range.setEnd(currentNode, Math.min(savedSel.end - charIndex, currentNode.nodeValue.length));
+                        } else {
+                            range.setEndAfter(currentNode);
+                        }
+                        foundEnd = true;
+                        break;
+                    }
+
+                    charIndex = nextCharIndex;
+                    currentNode = walker.nextNode();
                 }
-                const sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(range);
+
+                // Safety fallback: if target position was beyond content, place at end — NEVER at 0 (top)!
+                if (!foundStart) {
+                    if (lastNode && lastNode !== containerEl) {
+                        if (lastNode.nodeType === 3) {
+                            range.setStart(lastNode, lastNode.nodeValue.length);
+                            range.setEnd(lastNode, lastNode.nodeValue.length);
+                        } else {
+                            range.setStartAfter(lastNode);
+                            range.setEndAfter(lastNode);
+                        }
+                    } else {
+                        range.selectNodeContents(containerEl);
+                        range.collapse(false);
+                    }
+                } else if (!foundEnd) {
+                    range.collapse(true);
+                }
+
+                try {
+                    const sel = window.getSelection();
+                    if (sel) {
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    }
+                } catch (e) {
+                    console.warn('Could not restore selection:', e);
+                }
             },
             
             // Highlight spam keywords inside the preview (text nodes only)
