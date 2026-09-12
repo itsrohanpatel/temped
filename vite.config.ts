@@ -23,6 +23,25 @@ export default defineConfig(({ mode }) => {
               });
             }
           });
+
+          const copyDir = (dir: string) => {
+            if (!fs.existsSync(dir)) return;
+            const entries = fs.readdirSync(dir, { withFileTypes: true });
+            for (const entry of entries) {
+              const fullPath = path.join(dir, entry.name);
+              if (entry.isDirectory()) {
+                copyDir(fullPath);
+              } else if (entry.isFile()) {
+                const relPath = path.relative(__dirname, fullPath).replace(/\\/g, '/');
+                this.emitFile({
+                  type: 'asset',
+                  fileName: relPath,
+                  source: fs.readFileSync(fullPath, 'utf8')
+                });
+              }
+            }
+          };
+          copyDir(path.resolve(__dirname, 'js'));
         }
       }
     ],

@@ -82,13 +82,21 @@ describe('Security and Template Hardening', () => {
 
         it('templates.html preview should sanitize rendered HTML', () => {
             const templatesHtml = fs.readFileSync(path.resolve(__dirname, '../templates.html'), 'utf8');
+            const templateManagerJs = fs.existsSync(path.resolve(__dirname, '../js/templates/template-manager.js'))
+                ? fs.readFileSync(path.resolve(__dirname, '../js/templates/template-manager.js'), 'utf8')
+                : '';
+            const code = templatesHtml + '\n' + templateManagerJs;
             // The assignment to previewRendered.innerHTML should pass through sanitizeHtml or DOMPurify
-            expect(templatesHtml).toMatch(/previewRendered\.innerHTML\s*=\s*(?:window\.EmailEditorUtils\.sanitizeHtml|DOMPurify\.sanitize)/);
+            expect(code).toMatch(/previewRendered\.innerHTML\s*=\s*(?:window\.EmailEditorUtils\.sanitizeHtml|DOMPurify\.sanitize|sanitize)/);
         });
 
         it('templates.html templateCard should escape attribute values and IDs', () => {
             const templatesHtml = fs.readFileSync(path.resolve(__dirname, '../templates.html'), 'utf8');
-            expect(templatesHtml).toContain('data-id="${this.escapeAttr(id)}"');
+            const templateManagerJs = fs.existsSync(path.resolve(__dirname, '../js/templates/template-manager.js'))
+                ? fs.readFileSync(path.resolve(__dirname, '../js/templates/template-manager.js'), 'utf8')
+                : '';
+            const code = templatesHtml + '\n' + templateManagerJs;
+            expect(code).toContain('data-id="${this.escapeAttr(id)}"');
         });
     });
 
@@ -102,14 +110,22 @@ describe('Security and Template Hardening', () => {
 
         it('settings.html should escape custom spam words in DOM to prevent XSS', () => {
             const settingsHtml = fs.readFileSync(path.resolve(__dirname, '../settings.html'), 'utf8');
+            const settingsManagerJs = fs.existsSync(path.resolve(__dirname, '../js/settings/settings-manager.js'))
+                ? fs.readFileSync(path.resolve(__dirname, '../js/settings/settings-manager.js'), 'utf8')
+                : '';
+            const code = settingsHtml + '\n' + settingsManagerJs;
             // Check that keyword is escaped rather than raw interpolation
-            expect(settingsHtml).toMatch(/this\.escape(?:Html)?\(word\.keyword\)/);
+            expect(code).toMatch(/this\.escape(?:Html)?\(word\.(?:keyword|word)\)/);
         });
 
         it('settings.html should construct regex using single backslash word boundaries', () => {
             const settingsHtml = fs.readFileSync(path.resolve(__dirname, '../settings.html'), 'utf8');
+            const settingsManagerJs = fs.existsSync(path.resolve(__dirname, '../js/settings/settings-manager.js'))
+                ? fs.readFileSync(path.resolve(__dirname, '../js/settings/settings-manager.js'), 'utf8')
+                : '';
+            const code = settingsHtml + '\n' + settingsManagerJs;
             // The broken 4-backslash pattern '\\\\b' in code should not be present
-            expect(settingsHtml).not.toContain("'\\\\\\\\b'");
+            expect(code).not.toContain("'\\\\\\\\b'");
         });
     });
 });

@@ -4,7 +4,17 @@ import path from 'path';
 
 describe('TempEd Pro Production Suite UI Integration Tests', () => {
     const indexHtml = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf-8');
+    const editorJs = fs.existsSync(path.resolve(__dirname, '../js/editor/editor-app.js'))
+        ? fs.readFileSync(path.resolve(__dirname, '../js/editor/editor-app.js'), 'utf-8')
+        : '';
+    const indexCode = indexHtml + '\n' + editorJs;
+
     const templatesHtml = fs.readFileSync(path.resolve(__dirname, '../templates.html'), 'utf-8');
+    const templateManagerJs = fs.existsSync(path.resolve(__dirname, '../js/templates/template-manager.js'))
+        ? fs.readFileSync(path.resolve(__dirname, '../js/templates/template-manager.js'), 'utf-8')
+        : '';
+    const templatesCode = templatesHtml + '\n' + templateManagerJs;
+
     const sharedStylesCss = fs.readFileSync(path.resolve(__dirname, '../shared-styles.css'), 'utf-8');
 
     describe('Security and Hardening in index.html', () => {
@@ -13,13 +23,13 @@ describe('TempEd Pro Production Suite UI Integration Tests', () => {
         });
 
         it('escapes attributes in addVariableRow', () => {
-            expect(indexHtml).toMatch(/safeName\s*=.*EmailEditorUtils\.escapeAttr/);
-            expect(indexHtml).toMatch(/safeValue\s*=.*EmailEditorUtils\.escapeAttr/);
+            expect(indexCode).toMatch(/safeName\s*=.*EmailEditorUtils\.escapeAttr/);
+            expect(indexCode).toMatch(/safeValue\s*=.*EmailEditorUtils\.escapeAttr/);
         });
 
         it('sanitizes formatted HTML in showAIResponse', () => {
-            expect(indexHtml).toMatch(/sanitizedHTML\s*=.*EmailEditorUtils\.sanitizeHtml/);
-            expect(indexHtml).toMatch(/ai-content['"]\)\.innerHTML\s*=\s*sanitizedHTML/);
+            expect(indexCode).toMatch(/sanitizedHTML\s*=.*EmailEditorUtils\.sanitizeHtml/);
+            expect(indexCode).toMatch(/ai-content['"]\)\.innerHTML\s*=\s*sanitizedHTML/);
         });
     });
 
@@ -43,10 +53,10 @@ describe('TempEd Pro Production Suite UI Integration Tests', () => {
         });
 
         it('defines preflight inspection methods in EmailEditor', () => {
-            expect(indexHtml).toContain('runPreflightInspection()');
-            expect(indexHtml).toContain('showPreflightModal()');
-            expect(indexHtml).toContain('hidePreflightModal()');
-            expect(indexHtml).toContain('insertComplianceFooter()');
+            expect(indexCode).toContain('runPreflightInspection()');
+            expect(indexCode).toContain('showPreflightModal()');
+            expect(indexCode).toContain('hidePreflightModal()');
+            expect(indexCode).toContain('insertComplianceFooter()');
         });
     });
 
@@ -60,8 +70,8 @@ describe('TempEd Pro Production Suite UI Integration Tests', () => {
         });
 
         it('defines insertComponent handler in EmailEditor', () => {
-            expect(indexHtml).toContain('insertComponent(componentKey)');
-            expect(indexHtml).toMatch(/window\.EmailComponentSnippets\[componentKey\]/);
+            expect(indexCode).toContain('insertComponent(componentKey)');
+            expect(indexCode).toMatch(/window\.EmailComponentSnippets\[componentKey\]/);
         });
     });
 
@@ -77,10 +87,10 @@ describe('TempEd Pro Production Suite UI Integration Tests', () => {
         });
 
         it('defines gallery modal and template loading methods in EmailEditor', () => {
-            expect(indexHtml).toContain('showStarterTemplatesModal()');
-            expect(indexHtml).toContain('hideStarterTemplatesModal()');
-            expect(indexHtml).toContain('renderStarterTemplatesModal()');
-            expect(indexHtml).toContain('loadStarterTemplate(templateId)');
+            expect(indexCode).toContain('showStarterTemplatesModal()');
+            expect(indexCode).toContain('hideStarterTemplatesModal()');
+            expect(indexCode).toContain('renderStarterTemplatesModal()');
+            expect(indexCode).toContain('loadStarterTemplate(templateId)');
         });
     });
 
@@ -96,10 +106,10 @@ describe('TempEd Pro Production Suite UI Integration Tests', () => {
         });
 
         it('defines export methods for HTML, TXT, EML, and rendered clipboard', () => {
-            expect(indexHtml).toContain('exportHtmlFile()');
-            expect(indexHtml).toContain('exportTxtFile()');
-            expect(indexHtml).toContain('exportEmlFile()');
-            expect(indexHtml).toContain('copyRenderedToClipboard()');
+            expect(indexCode).toContain('exportHtmlFile()');
+            expect(indexCode).toContain('exportTxtFile()');
+            expect(indexCode).toContain('exportEmlFile()');
+            expect(indexCode).toContain('copyRenderedToClipboard()');
         });
     });
 
@@ -110,8 +120,8 @@ describe('TempEd Pro Production Suite UI Integration Tests', () => {
         });
 
         it('defines seedStarterTemplates in TemplateManager on templates.html', () => {
-            expect(templatesHtml).toContain('seedStarterTemplates()');
-            expect(templatesHtml).toMatch(/window\.StarterTemplates\.getAll/);
+            expect(templatesCode).toContain('seedStarterTemplates()');
+            expect(templatesCode).toMatch(/window\.StarterTemplates\.getAll/);
         });
     });
 
