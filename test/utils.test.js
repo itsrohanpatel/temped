@@ -336,6 +336,13 @@ describe('EmailEditorUtils Core Tests', () => {
             expect(clean).not.toContain('color: rgb(212, 212, 212)');
             expect(clean).toContain('Hi Hiring Manager,');
             expect(clean).toContain('<li>Achievement 1</li>');
+
+            // Test dark hex background stripping and redundant nested span unwrapping
+            const dirtyHex = '<div style="background-color: #212121; color: #ffffff;"><span style=""><span><span>Clean Text</span></span></span><span></span></div>';
+            const cleanHex = utils.cleanPastedHtml(dirtyHex);
+            expect(cleanHex).not.toContain('#212121');
+            expect(cleanHex).toContain('Clean Text');
+            expect(cleanHex).not.toContain('<span style="">');
         });
     });
 });

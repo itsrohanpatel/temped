@@ -254,8 +254,8 @@ const EmailEditorUtils = {
         if (!html) return '';
         if (typeof window !== 'undefined' && window.DOMPurify) {
             return window.DOMPurify.sanitize(html, {
-                ADD_TAGS: ['style'],
-                ADD_ATTR: ['target', 'style']
+                ADD_TAGS: ['style', 'font', 'center'],
+                ADD_ATTR: ['target', 'style', 'data-variable', 'contenteditable', 'data-id', 'data-action', 'role', 'color']
             });
         }
         // Fallback sanitizer if DOMPurify is not available
@@ -280,21 +280,25 @@ const EmailEditorUtils = {
         clean = clean.replace(/<\/?(?:ms-cmark-node|ng-container|c-wiz)[^>]*>/gi, '');
 
         // Remove Angular & web framework component attributes & classes
-        clean = clean.replace(/\s+_ngcontent-[a-zA-Z0-9_-]+=""/gi, '');
-        clean = clean.replace(/\s+_nghost-[a-zA-Z0-9_-]+=""/gi, '');
+        clean = clean.replace(/\s+_ngcontent-[a-zA-Z0-9_-]+(?:="[^"]*")?/gi, '');
+        clean = clean.replace(/\s+_nghost-[a-zA-Z0-9_-]+(?:="[^"]*")?/gi, '');
         clean = clean.replace(/\s+class="[^"]*ng-star-inserted[^"]*"/gi, '');
         clean = clean.replace(/\s+class=""/gi, '');
 
         // Strip web dark-mode backgrounds, web text colors, and tap highlight artifacts
-        clean = clean.replace(/background-color:\s*rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\);?/gi, '');
-        clean = clean.replace(/color:\s*rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\);?/gi, '');
+        clean = clean.replace(/background-color:\s*(?:rgb|rgba|hsl|hsla)\([^)]+\);?/gi, '');
+        clean = clean.replace(/background-color:\s*#(?:1[0-9a-f]{5}|2[0-9a-f]{5}|3[0-9a-f]{5}|0[0-9a-f]{5}|1[0-9a-f]{2}|2[0-9a-f]{2}|3[0-9a-f]{2}|000);?/gi, '');
+        clean = clean.replace(/color:\s*(?:rgb|rgba)\(\s*(?:2[0-5][0-9]|19[0-9]|255)\s*,\s*(?:2[0-5][0-9]|19[0-9]|255)\s*,\s*(?:2[0-5][0-9]|19[0-9]|255)[^)]*\);?/gi, '');
         clean = clean.replace(/-webkit-tap-highlight-color:\s*[^;"]+;?/gi, '');
         clean = clean.replace(/font-optical-sizing:\s*[^;"]+;?/gi, '');
         clean = clean.replace(/display:\s*contents;?/gi, '');
 
         // Unwrap redundant spans that have empty style or no attributes
-        clean = clean.replace(/<span\s*>([\s\S]*?)<\/span>/gi, '$1');
-        clean = clean.replace(/<span\s+style="\s*"\s*>([\s\S]*?)<\/span>/gi, '$1');
+        for (let i = 0; i < 3; i++) {
+            clean = clean.replace(/<span\s*>([\s\S]*?)<\/span>/gi, '$1');
+            clean = clean.replace(/<span\s+style="\s*"\s*>([\s\S]*?)<\/span>/gi, '$1');
+            clean = clean.replace(/<span\b[^>]*>\s*<\/span>/gi, '');
+        }
 
         // Simplify list item nested paragraphs (e.g. <li><p>Text</p></li> -> <li>Text</li>)
         clean = clean.replace(/<li\b[^>]*>\s*<p\b[^>]*>([\s\S]*?)<\/p>\s*<\/li>/gi, '<li>$1</li>');

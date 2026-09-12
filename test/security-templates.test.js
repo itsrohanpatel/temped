@@ -40,6 +40,22 @@ describe('Security and Template Hardening', () => {
             expect(clean).toContain('<table>');
             expect(clean).toContain('Test');
         });
+
+        it('should call DOMPurify with data-variable and contenteditable attributes when available', () => {
+            let capturedOptions = null;
+            window.DOMPurify = {
+                sanitize: (html, opts) => {
+                    capturedOptions = opts;
+                    return html;
+                }
+            };
+            const testHtml = '<span data-variable="name" contenteditable="false">John</span>';
+            const res = EmailEditorUtils.sanitizeHtml(testHtml);
+            expect(res).toBe(testHtml);
+            expect(capturedOptions.ADD_ATTR).toContain('data-variable');
+            expect(capturedOptions.ADD_ATTR).toContain('contenteditable');
+            delete window.DOMPurify;
+        });
     });
 
     describe('EmailEditorUtils.buildWordRegex', () => {
