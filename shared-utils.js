@@ -173,6 +173,77 @@ const EmailEditorUtils = {
         }
         return Array.from(names);
     },
+
+    /**
+     * Injects a hidden preheader snippet into an HTML email document
+     * @param {string} html - Raw email HTML
+     * @param {string} preheaderText - Preheader preview text
+     * @returns {string} HTML with preheader snippet injected
+     */
+    injectPreheader(html, preheaderText) {
+        if (!html) return '';
+        if (!preheaderText || !preheaderText.trim()) return html;
+        
+        const cleanPreheader = this.escapeHtml(preheaderText.trim());
+        const preheaderSnippet = `<div style="display:none;font-size:1px;color:#333333;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${cleanPreheader}&#847;&zwnj;&nbsp;&#8199;&shy;&#847;&zwnj;&nbsp;&#8199;&shy;</div>`;
+        
+        const bodyMatch = /<body[^>]*>/i.exec(html);
+        if (bodyMatch) {
+            const insertIndex = bodyMatch.index + bodyMatch[0].length;
+            return html.slice(0, insertIndex) + preheaderSnippet + html.slice(insertIndex);
+        }
+        return preheaderSnippet + html;
+    },
+
+    /**
+     * Sets preview viewport width
+     * @param {HTMLElement} container - Preview container element
+     * @param {'desktop'|'tablet'|'mobile'|string} device - Viewport type
+     */
+    setPreviewViewport(container, device) {
+        if (!container || !container.style) return;
+        const widths = {
+            desktop: '600px',
+            tablet: '768px',
+            mobile: '375px'
+        };
+        const targetWidth = widths[device] || '600px';
+        container.style.maxWidth = targetWidth;
+        container.style.width = '100%';
+        container.style.margin = '0 auto';
+        container.style.transition = 'max-width 0.3s ease';
+    },
+
+    /**
+     * Toggles dark mode simulation on the email preview container
+     * @param {HTMLElement} previewElement - Preview container element
+     * @returns {boolean} Whether dark mode is now active
+     */
+    togglePreviewDarkMode(previewElement) {
+        if (!previewElement) return false;
+        const isDark = previewElement.classList.toggle('preview-dark-mode');
+        return isDark;
+    },
+
+    /**
+     * Auto-discovers all template variables from text and merges with existing vars
+     * @param {string} templateText - Template content
+     * @param {Object} existingVars - Existing variable key-value object
+     * @returns {Object} Updated variable map
+     */
+    autoDiscoverVariables(templateText, existingVars = {}) {
+        if (!templateText) return { ...existingVars };
+        const result = { ...existingVars };
+        const matches = templateText.matchAll(/\{\{([^{}|]+)(?:\|([^{}]+))?\}\}/g);
+        for (const m of matches) {
+            const varName = m[1].trim();
+            const fallback = m[2] !== undefined ? m[2].trim() : '';
+            if (!(varName in result)) {
+                result[varName] = fallback;
+            }
+        }
+        return result;
+    },
     
     /**
      * Escape HTML to prevent XSS

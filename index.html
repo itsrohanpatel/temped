@@ -595,6 +595,27 @@
             background: var(--color-light-bg);
             transform: translateX(4px);
         }
+
+        /* Dark Mode Simulation for Email Preview */
+        .preview-dark-mode {
+            background-color: #1e293b !important;
+            color: #f1f5f9 !important;
+            border-color: #475569 !important;
+        }
+        .preview-dark-mode * {
+            color: inherit;
+        }
+        .preview-dark-mode a {
+            color: #38bdf8 !important;
+        }
+        .preview-dark-mode table, .preview-dark-mode td, .preview-dark-mode th {
+            border-color: #475569 !important;
+        }
+        .viewport-btn.active {
+            background: white !important;
+            color: #0f172a !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body class="text-slate-800">
@@ -648,6 +669,18 @@
                         </div>
                     </div>
                     
+                    <!-- Preheader / Preview Text Input -->
+                    <div class="my-4">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-semibold block" style="color: var(--color-text);">Preview / Preheader Text:</label>
+                            <span class="text-xs text-slate-400">Appears next to subject in mobile & web inboxes</span>
+                        </div>
+                        <input type="text" id="preheader-input" 
+                               class="w-full p-3 text-white border-2 rounded-xl font-medium text-sm transition-all focus:ring-2" 
+                               style="background: var(--color-black); border-color: var(--color-platinum);"
+                               placeholder="Catchy secondary snippet (e.g., Don't miss our engineering leadership keynote)...">
+                    </div>
+                    
                     <!-- Toolbar -->
                     <div class="py-4 border-t-2" style="border-color: var(--color-platinum);">
                         <div id="toolbar" class="flex flex-wrap items-center gap-2 p-3 rounded-xl border-2" role="toolbar" aria-label="Text formatting toolbar" style="background: var(--color-light-bg); border-color: var(--color-platinum);">
@@ -684,6 +717,31 @@
                             <button id="help-btn" class="toolbar-btn" aria-label="Show keyboard shortcuts" title="Keyboard Shortcuts"><i class="fas fa-question-circle"></i></button>
                         </div>
                     </div>
+                    <!-- Preview Modes & Device Viewport Toolbar -->
+                    <div class="flex flex-wrap items-center justify-between pb-3 pt-2 gap-2">
+                        <!-- Viewport Buttons -->
+                        <div class="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200" role="group" aria-label="Device preview viewport">
+                            <button id="viewport-desktop" class="viewport-btn active px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-800" title="Desktop View (600px)">
+                                <i class="fas fa-desktop mr-1.5"></i>Desktop
+                            </button>
+                            <button id="viewport-tablet" class="viewport-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-600 hover:text-slate-900" title="Tablet View (768px)">
+                                <i class="fas fa-tablet-alt mr-1.5"></i>Tablet
+                            </button>
+                            <button id="viewport-mobile" class="viewport-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-600 hover:text-slate-900" title="Mobile View (375px)">
+                                <i class="fas fa-mobile-alt mr-1.5"></i>Mobile
+                            </button>
+                        </div>
+
+                        <!-- Dark Mode Toggle & Health Score Badge -->
+                        <div class="flex items-center space-x-2">
+                            <button id="preview-dark-toggle" class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all text-slate-700 flex items-center shadow-sm" title="Toggle Dark Mode Simulation">
+                                <i class="fas fa-moon mr-1.5 text-indigo-500"></i>Dark Mode
+                            </button>
+                            <button id="health-score-badge" class="px-3 py-1.5 text-xs font-bold rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all flex items-center shadow-sm cursor-pointer" title="Deliverability Health Score - Click for diagnostic report">
+                                <i class="fas fa-shield-alt mr-1.5"></i><span id="health-score-val">100/100</span>&nbsp;<span id="health-score-grade">Great</span>
+                            </button>
+                        </div>
+                    </div>
                     <!-- Email Body -->
                     <div id="email-preview" contenteditable="true" class="prose prose-sm max-w-none leading-relaxed p-5 border-2 rounded-xl transition-all" style="min-height: 300px; color: var(--color-text); border-color: var(--color-platinum); background: white;">
                         <!-- Rendered HTML will go here -->
@@ -699,6 +757,9 @@
                         <!-- Dynamic variables will be injected here -->
                     </div>
                     <div class="flex flex-wrap gap-2 mt-3">
+                        <button id="auto-detect-vars-btn" class="text-sm font-semibold transition-all px-3 py-1.5 rounded-lg text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 shadow-sm" title="Scan template text and subject for {{variables}}">
+                            <i class="fas fa-magic mr-1"></i> Auto-Detect Variables
+                        </button>
                         <button id="add-variable-btn" class="text-sm font-semibold transition-all px-3 py-1.5 rounded-lg" style="color: var(--color-blue-violet);">
                             <i class="fas fa-plus-circle mr-1"></i> Add Variable
                         </button>
@@ -721,9 +782,17 @@
                     <h2 class="text-xl font-semibold mb-4" style="color: var(--color-text);">Edit Email HTML & Check Spam Score</h2>
                     <div class="relative flex-grow h-full rounded-xl border-2 focus-within:ring-2 transition-all" style="background: var(--color-black); border-color: var(--color-platinum);">
                         <textarea id="spam-checker--textarea" class="w-full h-full p-4 font-mono text-sm custom-scrollbar" style="min-height: 400px; background: transparent; color: var(--color-platinum);"></textarea>
-                        <button id="copy-html-btn" class="absolute top-3 right-3 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-all hover:transform hover:-translate-y-0.5" style="background: var(--color-blue-violet);">
-                            <i class="fas fa-copy mr-1"></i>Copy HTML
-                        </button>
+                        <div class="absolute top-3 right-3 flex items-center space-x-1.5 z-10">
+                            <button id="copy-subject-btn" class="text-white text-xs font-semibold py-1.5 px-2.5 rounded-lg transition-all hover:bg-slate-700 bg-slate-800 shadow" title="Copy Rendered Subject Line">
+                                <i class="fas fa-heading mr-1"></i>Subject
+                            </button>
+                            <button id="copy-text-btn" class="text-white text-xs font-semibold py-1.5 px-2.5 rounded-lg transition-all hover:bg-slate-700 bg-slate-800 shadow" title="Copy Plain Text">
+                                <i class="fas fa-file-alt mr-1"></i>Plain Text
+                            </button>
+                            <button id="copy-html-btn" class="text-white text-xs font-semibold py-1.5 px-3 rounded-lg transition-all hover:transform hover:-translate-y-0.5 shadow" style="background: var(--color-blue-violet);" title="Copy HTML with Preheader">
+                                <i class="fas fa-copy mr-1"></i>Copy HTML
+                            </button>
+                        </div>
                     </div>
                     <div id="spam-checker--aside" class="mt-4 p-4 rounded-xl border-2" style="background: white; border-color: var(--color-platinum);">
                         <i style="color: var(--color-text-muted);">Add content to get your spam score.</i>
@@ -988,6 +1057,69 @@
         </div>
     </div>
 
+    <!-- Deliverability Health Report Modal -->
+    <div id="health-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="health-modal-title">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border-2" style="border-color: var(--color-platinum);">
+            <div class="flex justify-between items-center pb-4 border-b-2" style="border-color: var(--color-platinum);">
+                <div class="flex items-center space-x-3">
+                    <div id="health-modal-icon-wrap" class="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-600 text-lg">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div>
+                        <h2 id="health-modal-title" class="text-xl font-bold text-slate-900">Deliverability Health</h2>
+                        <p class="text-xs text-slate-500">Inbox placement & compliance diagnostic</p>
+                    </div>
+                </div>
+                <button id="close-health-modal" class="text-slate-400 hover:text-slate-600 text-lg p-1">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="py-5 space-y-4">
+                <!-- Score Circle / Banner -->
+                <div class="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div>
+                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Overall Score</div>
+                        <div class="text-3xl font-extrabold" id="health-modal-score">100 / 100</div>
+                    </div>
+                    <div id="health-modal-grade-badge" class="px-4 py-1.5 rounded-full text-sm font-bold bg-emerald-100 text-emerald-700">
+                        Great
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="text-xs text-slate-500 font-medium">Spam Hits</div>
+                        <div id="health-modal-spam-hits" class="text-lg font-bold text-slate-800">0</div>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="text-xs text-slate-500 font-medium">Read Time</div>
+                        <div id="health-modal-read-time" class="text-lg font-bold text-slate-800">1 min</div>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="text-xs text-slate-500 font-medium">Word Count</div>
+                        <div id="health-modal-word-count" class="text-lg font-bold text-slate-800">0</div>
+                    </div>
+                </div>
+
+                <!-- Diagnostic Checklist -->
+                <div>
+                    <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Checklist & Findings</h3>
+                    <div id="health-modal-findings" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t-2 flex justify-end" style="border-color: var(--color-platinum);">
+                <button id="health-modal-ok-btn" class="px-5 py-2 rounded-xl text-white font-semibold text-sm transition-all" style="background: var(--color-blue-violet);">
+                    Got It
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Help Modal -->
     <div id="help-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
         <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto shadow-2xl border-2" style="border-color: var(--color-blue-violet);">
@@ -1226,7 +1358,7 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
 
                 // Use custom model from storage if available
                 const aiModelKey = window.EMAIL_EDITOR_CONSTANTS?.STORAGE_KEYS?.AI_MODEL || 'ai-model-name';
-                const aiModel = localStorage.getItem(aiModelKey) || "gemma-3-27b-it";
+                const aiModel = localStorage.getItem(aiModelKey) || (window.EMAIL_EDITOR_CONSTANTS?.DEFAULT_AI_MODEL || "gemini-2.5-flash-lite");
 
                 return genAI.getGenerativeModel({
                     model: aiModel,
@@ -1342,44 +1474,9 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
             },
 
             showNotification(message, type = 'success') {
-                const n = document.getElementById('notification');
-                const text = document.getElementById('notification-text');
-                const icon = document.getElementById('notification-icon');
-                
-                if (!n || !text) return;
-                
-                text.textContent = message;
-                
-                // Set theme and icons
-                n.classList.remove('hidden');
-                
-                // Reset classes
-                n.style.background = '';
-                if (type === 'error') {
-                    n.style.background = 'var(--color-poppy)';
-                    icon.className = 'fas fa-exclamation-circle';
-                } else if (type === 'warning') {
-                    n.style.background = 'var(--color-carrot-orange)';
-                    icon.className = 'fas fa-exclamation-triangle';
-                } else {
-                    n.style.background = 'var(--color-blue-violet)';
-                    icon.className = 'fas fa-check-circle';
+                if (window.EmailEditorUtils?.showNotification) {
+                    window.EmailEditorUtils.showNotification(message, type);
                 }
-                
-                // Animate in
-                setTimeout(() => {
-                    n.classList.remove('translate-x-12', 'opacity-0');
-                    n.classList.add('translate-x-0', 'opacity-100');
-                }, 10);
-                
-                // Hide after delay
-                setTimeout(() => {
-                    n.classList.remove('translate-x-0', 'opacity-100');
-                    n.classList.add('translate-x-12', 'opacity-0');
-                    setTimeout(() => {
-                        n.classList.add('hidden');
-                    }, 300);
-                }, 3000);
             },
 
             queryNodes() {
@@ -2945,23 +3042,6 @@ Your responses must always be:
                 
                 document.getElementById('word-count').textContent = `Words: ${words}`;
                 document.getElementById('char-count').textContent = `Characters: ${chars}`;
-            },
-
-            showNotification(message, type = 'success') {
-                // Use shared utility if available
-                if (window.EmailEditorUtils?.showNotification) {
-                    window.EmailEditorUtils.showNotification(message, type);
-                    return;
-                }
-                
-                // Fallback to original implementation
-                const feedback = this.nodes.copyFeedback || document.getElementById('copy-feedback');
-                if (feedback) {
-                    feedback.textContent = message;
-                    feedback.classList.remove('opacity-0');
-                    const duration = window.EMAIL_EDITOR_CONSTANTS?.COPY_FEEDBACK_DURATION_MS || 2000;
-                    setTimeout(() => feedback.classList.add('opacity-0'), duration);
-                }
             },
 
             // Keyboard shortcuts
