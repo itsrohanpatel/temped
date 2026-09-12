@@ -1,12 +1,15 @@
 // --- START: SPAM CHECKER SCRIPT (highlight-within-textarea.js) ---
-(function($){let ID="hwt";let HighlightWithinTextarea=function($el,config){this.init($el,config)};HighlightWithinTextarea.prototype={init:function($el,config){this.$el=$el;if(this.getType(config)==="custom"){this.highlight=config;this.generate()}else{console.error("valid config object not provided")}},getType:function(instance){let type=typeof instance;if(!instance)return"falsey";else if(Array.isArray(instance))return instance.length===2&&typeof instance[0]==="number"&&typeof instance[1]==="number"?"range":"array";else if(type==="object")return instance instanceof RegExp?"regexp":instance.hasOwnProperty("highlight")?"custom":"other";else if(type==="function"||type==="string")return type;return"other"},generate:function(){this.$el.addClass(ID+"-input "+ID+"-content").on("input."+ID,this.handleInput.bind(this)).on("scroll."+ID,this.handleScroll.bind(this));this.$highlights=$("<div>",{class:ID+"-highlights "+ID+"-content"});this.$backdrop=$("<div>",{class:ID+"-backdrop"}).append(this.$highlights);this.$container=$("<div>",{class:ID+"-container"}).insertAfter(this.$el).append(this.$backdrop,this.$el).on("scroll",this.blockContainerScroll.bind(this));this.isGenerated=true;this.handleInput()},handleInput:function(){let input=this.$el.val();let ranges=this.getRanges(input,this.highlight);let unstaggeredRanges=this.removeStaggeredRanges(ranges);let boundaries=this.getBoundaries(unstaggeredRanges);this.renderMarks(boundaries);this.renderAside(boundaries)},getRanges:function(input,highlight){let type=this.getType(highlight);switch(type){case"array":return Array.prototype.concat.apply([],highlight.map(this.getRanges.bind(this,input)));case"function":return this.getRanges(input,highlight(input));case"regexp":let ranges=[];let match;while((match=highlight.exec(input),match!==null)){ranges.push([match.index,match.index+match[0].length]);if(!highlight.global)break}return ranges;case"string":let strRanges=[];let strLower=highlight.toLowerCase();let inputLower=input.toLowerCase();let index=0;while((index=inputLower.indexOf(strLower,index),index!==-1)){strRanges.push([index,index+strLower.length]);index+=strLower.length}return strRanges;case"range":return[highlight];case"custom":let customRanges=this.getRanges(input,highlight.highlight);if(highlight.category){customRanges.forEach(range=>{range.category=highlight.category;range.highlight=highlight.highlight;range.keyword=highlight.keyword})}return customRanges;default:if(highlight)console.error("unrecognized highlight type");return[]}},removeStaggeredRanges:function(ranges){let unstaggeredRanges=[];ranges.forEach(range=>{let isStaggered=unstaggeredRanges.some(unstaggeredRange=>{let isStartInside=range[0]>unstaggeredRange[0]&&range[0]<unstaggeredRange[1];let isStopInside=range[1]>unstaggeredRange[0]&&range[1]<unstaggeredRange[1];return isStartInside!==isStopInside});if(!isStaggered)unstaggeredRanges.push(range)});return unstaggeredRanges},getBoundaries:function(ranges){let boundaries=[];ranges.forEach(range=>{boundaries.push({type:"start",index:range[0],highlight:range.highlight,keyword:range.keyword,category:range.category});boundaries.push({type:"stop",index:range[1]})});this.sortBoundaries(boundaries);return boundaries},sortBoundaries:function(boundaries){boundaries.sort((a,b)=>{if(a.index!==b.index)return b.index-a.index;else if(a.type==="stop"&&b.type==="start")return 1;else if(a.type==="start"&&b.type==="stop")return-1;else return 0})},renderMarks:function(boundaries){let input=this.$el.val();boundaries.forEach((boundary,index)=>{let markup=boundary.type==="start"?"{{hwt-mark-start|"+index+"}}":"{{hwt-mark-stop}}";input=input.slice(0,boundary.index)+markup+input.slice(boundary.index)});input=input.replace(/\n(\{\{hwt-mark-stop\}\})?$/,"\n\n$1");input=input.replace(/</g,"&lt;").replace(/>/g,"&gt;");input=input.replace(/\{\{hwt-mark-start\|(\d+)\}\}/g,(match,submatch)=>{var category=boundaries[+submatch].category;return category?'<mark class="spam-category-'+category+'">':"<mark>"});input=input.replace(/\{\{hwt-mark-stop\}\}/g,"</mark>");this.$highlights.html(input)},renderAside:function(boundaries){const input=this.$el.val();const totalWords=(input.match(/\S+/g)||[]).length;const readtime=Math.ceil(totalWords/200);const aside=$("#spam-checker--aside");if(totalWords<1){aside.html("<div class='text-center py-8 text-slate-400 italic'><i class='fas fa-keyboard text-2xl mb-2 block'></i>Add some content to calculate your spam score.</div>");return}let totalSpamHits=0;const categories={};boundaries.forEach(range=>{if(!range.category)return;categories[range.category]=categories[range.category]||{keywords:[]};categories[range.category].keywords.push({keyword:range.keyword});totalSpamHits++});let list="";const categoryDetails={overpromise:{name:"Overpromise",emoji:"🤩"},urgency:{name:"Urgency",emoji:"🚨"},money:{name:"Money",emoji:"💰"},shady:{name:"Shady",emoji:"🔞"},unnatural:{name:"Unnatural",emoji:"🤔"}};let score=totalSpamHits;let hasCritical=false;Object.keys(categoryDetails).forEach(hash=>{if(categories[hash]){const category=categories[hash];const seen=new Set();const uniqueKeywords=[];category.keywords.forEach(k=>{const lower=(k.keyword||"").toLowerCase();if(!seen.has(lower)){seen.add(lower);uniqueKeywords.push(k.keyword)}});list+=`<li>${categoryDetails[hash].emoji}<div>${categoryDetails[hash].name} <span>(${category.keywords.length})</span><div class="mt-1 flex flex-wrap gap-1">${uniqueKeywords.map(w=>`<span class="px-2 py-0.5 bg-slate-200 rounded text-slate-700">${w}</span>`).join("")}</div></div></li>`;if(hash==="money"||hash==="shady")hasCritical=true}});if(hasCritical)score+=20;if(categories.urgency||categories.overpromise)score+=10;const scoreAsHtml=score>20?"<span class='font-bold' style='color: var(--color-poppy);'>Poor</span>":score>5?"<span class='font-bold' style='color: var(--color-carrot-orange);'>Okay</span>":"<span class='font-bold' style='color: var(--color-blue-violet);'>Great</span>";aside.html(`<div class="space-y-2 mb-4 pb-4 border-b-2" style="border-color: var(--color-platinum);"><div class="flex justify-between items-center text-sm"><span class="text-slate-500">Overall Grade:</span>${scoreAsHtml}</div><div class="flex justify-between items-center text-sm"><span class="text-slate-500">Total Words:</span><span class="font-semibold">${totalWords}</span></div><div class="flex justify-between items-center text-sm"><span class="text-slate-500">Read Time:</span><span class="font-semibold">${readtime>0?readtime+" min":"< 1 min"}</span></div><div class="flex justify-between items-center text-sm"><span class="text-slate-500">Spam Hits:</span><span class="font-semibold" style="${totalSpamHits>0?"color: var(--color-poppy);":""}">${totalSpamHits}</span></div></div>`+(list?`<ul class="space-y-3">${list}</ul>`:`<div class="text-center py-4 text-slate-400 text-sm italic"><i class="fas fa-check-circle text-lg mb-1 block" style="color: var(--color-blue-violet);"></i>No spam words detected.</div>`))},handleResize:function(){const width=this.$el.outerWidth();const height=this.$el.outerHeight();this.$backdrop.css({width:width,height:height})},destroy:function(){$(window).off("resize."+ID);this.$backdrop.remove();this.$el.unwrap().removeClass(ID+"-text "+ID+"-input").off(ID).removeData(ID)}};$.fn.highlightWithinTextarea=function(options){return this.each(function(){let $this=$(this);let plugin=$this.data(ID);if(typeof options==="string"){if(plugin){if(options==="update"){plugin.handleInput();plugin.handleResize()}else if(options==="destroy")plugin.destroy();else console.error("unrecognized method string")}else console.error("plugin must be instantiated first")}else{if(plugin)plugin.destroy();plugin=new HighlightWithinTextarea($this,options);if(plugin.isGenerated){$this.data(ID,plugin);$(window).on("resize."+ID,()=>plugin.handleResize());plugin.handleResize()}}})}})(jQuery);
+(function(global){
+const $ = global.jQuery || global.$;
+if (!$ || !$.fn) return;
+let ID="hwt";let HighlightWithinTextarea=function($el,config){this.init($el,config)};HighlightWithinTextarea.prototype={init:function($el,config){this.$el=$el;if(this.getType(config)==="custom"){this.highlight=config;this.generate()}else{console.error("valid config object not provided")}},getType:function(instance){let type=typeof instance;if(!instance)return"falsey";else if(Array.isArray(instance))return instance.length===2&&typeof instance[0]==="number"&&typeof instance[1]==="number"?"range":"array";else if(type==="object")return instance instanceof RegExp?"regexp":instance.hasOwnProperty("highlight")?"custom":"other";else if(type==="function"||type==="string")return type;return"other"},generate:function(){this.$el.addClass(ID+"-input "+ID+"-content").on("input."+ID,this.handleInput.bind(this)).on("scroll."+ID,this.handleScroll.bind(this));this.$highlights=$("<div>",{class:ID+"-highlights "+ID+"-content"});this.$backdrop=$("<div>",{class:ID+"-backdrop"}).append(this.$highlights);this.$container=$("<div>",{class:ID+"-container"}).insertAfter(this.$el).append(this.$backdrop,this.$el).on("scroll",this.blockContainerScroll.bind(this));this.isGenerated=true;this.handleInput()},handleInput:function(){let input=this.$el.val();let ranges=this.getRanges(input,this.highlight);let unstaggeredRanges=this.removeStaggeredRanges(ranges);let boundaries=this.getBoundaries(unstaggeredRanges);this.renderMarks(boundaries);this.renderAside(boundaries)},getRanges:function(input,highlight){let type=this.getType(highlight);switch(type){case"array":return Array.prototype.concat.apply([],highlight.map(this.getRanges.bind(this,input)));case"function":return this.getRanges(input,highlight(input));case"regexp":let ranges=[];let match;while((match=highlight.exec(input),match!==null)){ranges.push([match.index,match.index+match[0].length]);if(!highlight.global)break}return ranges;case"string":let strRanges=[];let strLower=highlight.toLowerCase();let inputLower=input.toLowerCase();let index=0;while((index=inputLower.indexOf(strLower,index),index!==-1)){strRanges.push([index,index+strLower.length]);index+=strLower.length}return strRanges;case"range":return[highlight];case"custom":let customRanges=this.getRanges(input,highlight.highlight);if(highlight.category){customRanges.forEach(range=>{range.category=highlight.category;range.highlight=highlight.highlight;range.keyword=highlight.keyword})}return customRanges;default:if(highlight)console.error("unrecognized highlight type");return[]}},removeStaggeredRanges:function(ranges){let unstaggeredRanges=[];ranges.forEach(range=>{let isStaggered=unstaggeredRanges.some(unstaggeredRange=>{let isStartInside=range[0]>unstaggeredRange[0]&&range[0]<unstaggeredRange[1];let isStopInside=range[1]>unstaggeredRange[0]&&range[1]<unstaggeredRange[1];return isStartInside!==isStopInside});if(!isStaggered)unstaggeredRanges.push(range)});return unstaggeredRanges},getBoundaries:function(ranges){let boundaries=[];ranges.forEach(range=>{boundaries.push({type:"start",index:range[0],highlight:range.highlight,keyword:range.keyword,category:range.category});boundaries.push({type:"stop",index:range[1]})});this.sortBoundaries(boundaries);return boundaries},sortBoundaries:function(boundaries){boundaries.sort((a,b)=>{if(a.index!==b.index)return b.index-a.index;else if(a.type==="stop"&&b.type==="start")return 1;else if(a.type==="start"&&b.type==="stop")return-1;else return 0})},renderMarks:function(boundaries){let input=this.$el.val();boundaries.forEach((boundary,index)=>{let markup=boundary.type==="start"?"{{hwt-mark-start|"+index+"}}":"{{hwt-mark-stop}}";input=input.slice(0,boundary.index)+markup+input.slice(boundary.index)});input=input.replace(/\n(\{\{hwt-mark-stop\}\})?$/,"\n\n$1");input=input.replace(/</g,"&lt;").replace(/>/g,"&gt;");input=input.replace(/\{\{hwt-mark-start\|(\d+)\}\}/g,(match,submatch)=>{var category=boundaries[+submatch].category;return category?'<mark class="spam-category-'+category+'">':"<mark>"});input=input.replace(/\{\{hwt-mark-stop\}\}/g,"</mark>");this.$highlights.html(input)},renderAside:function(boundaries){const input=this.$el.val();const totalWords=(input.match(/\S+/g)||[]).length;const readtime=Math.ceil(totalWords/200);const aside=$("#spam-checker--aside");if(totalWords<1){aside.html("<div class='text-center py-8 text-slate-400 italic'><i class='fas fa-keyboard text-2xl mb-2 block'></i>Add some content to calculate your spam score.</div>");return}let totalSpamHits=0;const categories={};boundaries.forEach(range=>{if(!range.category)return;categories[range.category]=categories[range.category]||{keywords:[]};categories[range.category].keywords.push({keyword:range.keyword});totalSpamHits++});let list="";const categoryDetails={overpromise:{name:"Overpromise",emoji:"🤩"},urgency:{name:"Urgency",emoji:"🚨"},money:{name:"Money",emoji:"💰"},shady:{name:"Shady",emoji:"🔞"},unnatural:{name:"Unnatural",emoji:"🤔"}};let score=totalSpamHits;let hasCritical=false;Object.keys(categoryDetails).forEach(hash=>{if(categories[hash]){const category=categories[hash];const seen=new Set();const uniqueKeywords=[];category.keywords.forEach(k=>{const lower=(k.keyword||"").toLowerCase();if(!seen.has(lower)){seen.add(lower);uniqueKeywords.push(k.keyword)}});list+=`<li>${categoryDetails[hash].emoji}<div>${categoryDetails[hash].name} <span>(${category.keywords.length})</span><div class="mt-1 flex flex-wrap gap-1">${uniqueKeywords.map(w=>`<span class="px-2 py-0.5 bg-slate-200 rounded text-slate-700">${w}</span>`).join("")}</div></div></li>`;if(hash==="money"||hash==="shady")hasCritical=true}});if(hasCritical)score+=20;if(categories.urgency||categories.overpromise)score+=10;const scoreAsHtml=score>20?"<span class='font-bold' style='color: var(--color-poppy);'>Poor</span>":score>5?"<span class='font-bold' style='color: var(--color-carrot-orange);'>Okay</span>":"<span class='font-bold' style='color: var(--color-blue-violet);'>Great</span>";aside.html(`<div class="space-y-2 mb-4 pb-4 border-b-2" style="border-color: var(--color-platinum);"><div class="flex justify-between items-center text-sm"><span class="text-slate-500">Overall Grade:</span>${scoreAsHtml}</div><div class="flex justify-between items-center text-sm"><span class="text-slate-500">Total Words:</span><span class="font-semibold">${totalWords}</span></div><div class="flex justify-between items-center text-sm"><span class="text-slate-500">Read Time:</span><span class="font-semibold">${readtime>0?readtime+" min":"< 1 min"}</span></div><div class="flex justify-between items-center text-sm"><span class="text-slate-500">Spam Hits:</span><span class="font-semibold" style="${totalSpamHits>0?"color: var(--color-poppy);":""}">${totalSpamHits}</span></div></div>`+(list?`<ul class="space-y-3">${list}</ul>`:`<div class="text-center py-4 text-slate-400 text-sm italic"><i class="fas fa-check-circle text-lg mb-1 block" style="color: var(--color-blue-violet);"></i>No spam words detected.</div>`))},handleResize:function(){const width=this.$el.outerWidth();const height=this.$el.outerHeight();this.$backdrop.css({width:width,height:height})},destroy:function(){$(window).off("resize."+ID);this.$backdrop.remove();this.$el.unwrap().removeClass(ID+"-text "+ID+"-input").off(ID).removeData(ID)}};$.fn.highlightWithinTextarea=function(options){return this.each(function(){let $this=$(this);let plugin=$this.data(ID);if(typeof options==="string"){if(plugin){if(options==="update"){plugin.handleInput();plugin.handleResize()}else if(options==="destroy")plugin.destroy();else console.error("unrecognized method string")}else console.error("plugin must be instantiated first")}else{if(plugin)plugin.destroy();plugin=new HighlightWithinTextarea($this,options);if(plugin.isGenerated){$this.data(ID,plugin);$(window).on("resize."+ID,()=>plugin.handleResize());plugin.handleResize()}}})}})(typeof window !== "undefined" ? window : globalThis);
 
-$(function () {
+(function () {
 // Full keyword list extracted from mailmeteor.com/assets/js/spam-checker.js
     const spamKeywords = [
-{ highlight: /[\$Â£â‚¬Â¥]{2,}/gi, keyword: "$$$", category: "money" },
-{ highlight: /[\$Â£â‚¬Â¥]{2,}/gi, keyword: "€€€", category: "money" },
-{ highlight: /[\$Â£â‚¬Â¥]{2,}/gi, keyword: "£££", category: "money" },
+{ highlight: /[$£€¥]{2,}/gi, keyword: "$$$", category: "money" },
+{ highlight: /[$£€¥]{2,}/gi, keyword: "€€€", category: "money" },
+{ highlight: /[$£€¥]{2,}/gi, keyword: "£££", category: "money" },
 { highlight: /\b50% off\b/gi, keyword: "50% off", category: "money" },
 { highlight: /\ba few bob\b/gi, keyword: "A few bob", category: "money" },
 { highlight: /\baccept cash cards\b/gi, keyword: "Accept cash cards", category: "money" },
@@ -49,7 +52,7 @@ $(function () {
 { highlight: /\bdouble your\b/gi, keyword: "Double your", category: "money" },
 { highlight: /\bdouble your wealth\b/gi, keyword: "Double your wealth", category: "money" },
 { highlight: /\bearn\b/gi, keyword: "Earn", category: "money" },
-{ highlight: /\bearn [\$Â£â‚¬Â¥]+\b/gi, keyword: "Earn $", category: "money" },
+{ highlight: /\bearn [$£€¥]+/gi, keyword: "Earn $", category: "money" },
 { highlight: /\bearn cash\b/gi, keyword: "Earn cash", category: "money" },
 { highlight: /\bearn extra income\b/gi, keyword: "Earn extra income", category: "money" },
 { highlight: /\bearn from home\b/gi, keyword: "Earn from home", category: "money" },
@@ -61,9 +64,9 @@ $(function () {
 { highlight: /\beasy income\b/gi, keyword: "Easy income", category: "money" },
 { highlight: /\beasy terms\b/gi, keyword: "Easy terms", category: "money" },
 { highlight: /\bfor free\b/gi, keyword: "For free", category: "money" },
-{ highlight: /\bfor just [\$Â£â‚¬Â¥]+\b/gi, keyword: "For just $", category: "money" },
-{ highlight: /\bfor just [\$Â£â‚¬Â¥]+[0-9]+\b/gi, keyword: "For just $ (amount)", category: "money" },
-{ highlight: /\bfor just [\$Â£â‚¬Â¥]+xxx\b/gi, keyword: "For just $xxx", category: "money" },
+{ highlight: /\bfor just [$£€¥]+/gi, keyword: "For just $", category: "money" },
+{ highlight: /\bfor just [$£€¥]+[0-9]+/gi, keyword: "For just $ (amount)", category: "money" },
+{ highlight: /\bfor just [$£€¥]+xxx/gi, keyword: "For just $xxx", category: "money" },
 { highlight: /\bget money\b/gi, keyword: "Get Money", category: "money" },
 { highlight: /\bget your money\b/gi, keyword: "Get your money", category: "money" },
 { highlight: /\bhidden assets\b/gi, keyword: "Hidden assets", category: "money" },
@@ -81,7 +84,7 @@ $(function () {
 { highlight: /\binvestment advice\b/gi, keyword: "Investment advice", category: "money" },
 { highlight: /\blifetime\b/gi, keyword: "Lifetime", category: "money" },
 { highlight: /\bloans\b/gi, keyword: "Loans", category: "money" },
-{ highlight: /\bmake [\$Â£â‚¬Â¥]+\b/gi, keyword: "Make $", category: "money" },
+{ highlight: /\bmake [$£€¥]+/gi, keyword: "Make $", category: "money" },
 { highlight: /\bmoney\b/gi, keyword: "Money", category: "money" },
 { highlight: /\bmoney making\b/gi, keyword: "Money making", category: "money" },
 { highlight: /\bmoney-making\b/gi, keyword: "Money-making", category: "money" },
@@ -89,7 +92,7 @@ $(function () {
 { highlight: /\bmortgage\b/gi, keyword: "Mortgage", category: "money" },
 { highlight: /\bmortgage rates\b/gi, keyword: "Mortgage rates", category: "money" },
 { highlight: /\boffer\b/gi, keyword: "Offer", category: "money" },
-{ highlight: /\bonly [\$Â£â‚¬Â¥]+\b/gi, keyword: "Only $", category: "money" },
+{ highlight: /\bonly [$£€¥]+/gi, keyword: "Only $", category: "money" },
 { highlight: /\bprice\b/gi, keyword: "Price", category: "money" },
 { highlight: /\bprice protection\b/gi, keyword: "Price protection", category: "money" },
 { highlight: /\bprices\b/gi, keyword: "Prices", category: "money" },
@@ -97,7 +100,7 @@ $(function () {
 { highlight: /\bquote\b/gi, keyword: "Quote", category: "money" },
 { highlight: /\brates\b/gi, keyword: "Rates", category: "money" },
 { highlight: /\brefinance\b/gi, keyword: "Refinance", category: "money" },
-{ highlight: /\bsave [\$Â£â‚¬Â¥]+\b/gi, keyword: "Save $", category: "money" },
+{ highlight: /\bsave [$£€¥]+/gi, keyword: "Save $", category: "money" },
 { highlight: /\bserious cash\b/gi, keyword: "Serious cash", category: "money" },
 { highlight: /\bsubject to credit\b/gi, keyword: "Subject to credit", category: "money" },
 { highlight: /\bUS Dollars\b/gi, keyword: "US Dollars", category: "money" },
@@ -862,8 +865,173 @@ $(function () {
 { highlight: /\byou are a winner\b/gi, keyword: "You are a winner", category: "urgency" }
 ];
 // Expose keywords globally for preview highlighting and listing
-window.spamKeywords = spamKeywords;
-document.dispatchEvent(new Event('spamKeywordsReady'));
-$("#spam-checker--textarea").highlightWithinTextarea({ highlight: spamKeywords });
-});
+// Filter false positives (common dictionary words mistakenly categorized as spam triggers)
+const FALSE_POSITIVES = new Set([
+    'open', 'please', 'regarding', 'unsubscribe', 'here', 'call', 'click', '%',
+    'form', 'friend', 'human', 'name', 'new', 'phone', 'request', 'solution',
+    'success', 'terms', 'today', 'now', 'only', 'all', 'avoid', 'member',
+    'home', 'leave', 'never', 'problem', 'sample', 'score', 'stop', 'access',
+    'act', 'action', 'buy', 'trial', 'beverage', 'accordingly', 'acceptance'
+]);
+const curatedSpamKeywords = spamKeywords.filter(k => !FALSE_POSITIVES.has((k.keyword || '').toLowerCase()));
+
+const SpamEngine = {
+    calculateHealthScore: function (subject, content) {
+        subject = subject || '';
+        content = content || '';
+        const combined = subject + '\n' + content;
+        const totalWords = (combined.match(/\S+/g) || []).length;
+        const readTimeMinutes = Math.ceil(totalWords / 200);
+
+        let score = 100;
+        const penalties = [];
+        const categories = {};
+        let spamHits = 0;
+
+        const hasUnsubscribeFooter = /(unsubscribe|opt[\s-]?out)/i.test(combined);
+
+        // Strip unsubscribe/opt-out compliance lines so legal footers are not flagged as spam
+        const linesToScan = combined.split('\n').filter(line => !/(unsubscribe|opt[\s-]?out)/i.test(line));
+        const textToScan = linesToScan.join('\n');
+
+        const keywords = (typeof window !== 'undefined' && window.spamKeywords) || curatedSpamKeywords || [];
+        keywords.forEach(item => {
+            if (!item.highlight) return;
+            const regex = new RegExp(item.highlight.source, item.highlight.flags);
+            let match;
+            let foundCount = 0;
+            while ((match = regex.exec(textToScan)) !== null) {
+                foundCount++;
+                if (!regex.global) break;
+            }
+            if (foundCount > 0) {
+                spamHits += foundCount;
+                const cat = item.category || 'other';
+                if (!categories[cat]) {
+                    categories[cat] = { count: 0, keywords: [] };
+                }
+                categories[cat].count += foundCount;
+                categories[cat].keywords.push({ keyword: item.keyword, count: foundCount });
+            }
+        });
+
+        if (spamHits > 0) {
+            const deduction = Math.min(45, spamHits * 6);
+            score -= deduction;
+            penalties.push({
+                type: 'spam_keywords',
+                description: 'Found ' + spamHits + ' spam trigger words/phrases',
+                deduction: deduction
+            });
+
+            if (categories.money || categories.shady) {
+                score -= 15;
+                penalties.push({
+                    type: 'critical_category',
+                    description: 'Contains high-risk financial or sensitive triggers',
+                    deduction: 15
+                });
+            }
+            if (categories.urgency || categories.overpromise) {
+                score -= 10;
+                penalties.push({
+                    type: 'urgency_overpromise',
+                    description: 'Contains high-pressure urgency or overpromise triggers',
+                    deduction: 10
+                });
+            }
+        }
+
+        const allCapsMatches = combined.match(/\b[A-Z]{3,}\b/g) || [];
+        const allCapsWordsCount = allCapsMatches.length;
+        if (allCapsWordsCount > 5) {
+            const deduction = 15;
+            score -= deduction;
+            penalties.push({
+                type: 'all_caps',
+                description: 'Excessive capitalization (' + allCapsWordsCount + ' all-caps words)',
+                deduction: deduction
+            });
+        }
+
+        const hasExcessivePunctuation = /([!?$]){2,}/.test(combined);
+        if (hasExcessivePunctuation) {
+            const deduction = 10;
+            score -= deduction;
+            penalties.push({
+                type: 'excessive_punctuation',
+                description: 'Excessive punctuation detected (e.g. !!!, ???, $$)',
+                deduction: deduction
+            });
+        }
+
+        const trimmedSubject = subject.trim();
+        let subjectLengthStatus = 'optimal';
+        if (trimmedSubject.length > 0 && trimmedSubject.length < 10) {
+            subjectLengthStatus = 'too_short';
+        } else if (trimmedSubject.length > 60) {
+            subjectLengthStatus = 'too_long';
+        }
+
+        const hasInsecureLinks = /\bhttp:\/\//i.test(combined);
+        if (hasInsecureLinks) {
+            const deduction = 10;
+            score -= deduction;
+            penalties.push({
+                type: 'insecure_links',
+                description: 'Contains insecure HTTP link(s)',
+                deduction: deduction
+            });
+        }
+
+        score = Math.max(0, Math.min(100, Math.round(score)));
+
+        let grade = 'Great';
+        let gradeColor = '#10b981';
+        if (score < 50) {
+            grade = 'Poor';
+            gradeColor = '#ef4444';
+        } else if (score < 80) {
+            grade = 'Okay';
+            gradeColor = '#f59e0b';
+        }
+
+        return {
+            score: score,
+            grade: grade,
+            gradeColor: gradeColor,
+            spamHits: spamHits,
+            totalWords: totalWords,
+            readTimeMinutes: readTimeMinutes,
+            categories: categories,
+            allCapsWordsCount: allCapsWordsCount,
+            hasExcessivePunctuation: hasExcessivePunctuation,
+            subjectLengthStatus: subjectLengthStatus,
+            hasUnsubscribeFooter: hasUnsubscribeFooter,
+            hasInsecureLinks: hasInsecureLinks,
+            penalties: penalties
+        };
+    }
+};
+
+(function(global) {
+    global.spamKeywords = curatedSpamKeywords;
+    global.SpamEngine = SpamEngine;
+    if (typeof document !== 'undefined') {
+        document.dispatchEvent(new Event('spamKeywordsReady'));
+    }
+    const $ = global.jQuery || global.$;
+    if ($) {
+        $(function () {
+            if ($("#spam-checker--textarea").length && $.fn.highlightWithinTextarea) {
+                $("#spam-checker--textarea").highlightWithinTextarea({ highlight: curatedSpamKeywords });
+            }
+        });
+    }
+})(typeof window !== 'undefined' ? window : globalThis);
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { spamKeywords: curatedSpamKeywords, SpamEngine };
+}
+})();
 // --- END: SPAM CHECKER SCRIPT ---
