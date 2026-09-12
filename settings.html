@@ -158,40 +158,147 @@
                 <i class="fas fa-cog text-indigo-600"></i>
                 <span>Configuration & Preferences</span>
             </h1>
-            <p class="text-sm text-slate-500 mt-1">Configure your Gemini AI credentials, deliverability spam word lists, and custom prompt templates.</p>
+            <p class="text-sm text-slate-500 mt-1">Configure your AI providers (Groq & Gemini), model auto-rotation, deliverability spam lists, and custom prompt templates.</p>
         </div>
-        <!-- Gemini API Configuration Section -->
+        <!-- AI Provider & Engine Configuration Section -->
         <div class="settings-section">
-            <h2><i class="fas fa-robot mr-2"></i> Gemini API Configuration</h2>
-            <div class="form-group">
-                <label class="form-label">Gemini API Key</label>
-                <div class="flex gap-2">
-                    <input type="password" id="gemini-api-key" class="form-input flex-1" placeholder="Enter your Gemini API key">
-                    <button id="toggle-api-key" class="btn btn-secondary" type="button">
-                        <i class="fas fa-eye"></i>
-                    </button>
+            <h2><i class="fas fa-microchip mr-2 text-indigo-600"></i> AI Provider & Model Configuration</h2>
+
+            <!-- Provider Mode Selector -->
+            <div class="form-group mb-6">
+                <label class="form-label font-bold text-sm text-slate-700">Active AI Mode</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+                    <label class="p-3.5 rounded-xl border-2 flex items-center gap-3 cursor-pointer transition-all hover:shadow-sm" id="card-provider-auto" style="border-color: var(--color-blue-violet, #6366f1); background: rgba(99, 102, 241, 0.04);">
+                        <input type="radio" name="ai-provider" value="auto" class="accent-indigo-600 h-4 w-4" checked>
+                        <div>
+                            <div class="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                                <span>Auto-Rotate</span>
+                                <span class="px-1.5 py-0.5 text-[10px] uppercase font-extrabold bg-indigo-100 text-indigo-800 rounded">Best</span>
+                            </div>
+                            <div class="text-xs text-slate-500 mt-0.5">Ultra-fast Groq with auto-fallback</div>
+                        </div>
+                    </label>
+
+                    <label class="p-3.5 rounded-xl border-2 flex items-center gap-3 cursor-pointer transition-all hover:shadow-sm" id="card-provider-groq" style="border-color: var(--color-border, #e2e8f0);">
+                        <input type="radio" name="ai-provider" value="groq" class="accent-indigo-600 h-4 w-4">
+                        <div>
+                            <div class="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                                <span>Groq Cloud</span>
+                                <span class="px-1.5 py-0.5 text-[10px] uppercase font-bold bg-amber-100 text-amber-800 rounded">⚡ Ultra Fast</span>
+                            </div>
+                            <div class="text-xs text-slate-500 mt-0.5">Llama 3.3 70B, 3.1 8B, Mixtral</div>
+                        </div>
+                    </label>
+
+                    <label class="p-3.5 rounded-xl border-2 flex items-center gap-3 cursor-pointer transition-all hover:shadow-sm" id="card-provider-gemini" style="border-color: var(--color-border, #e2e8f0);">
+                        <input type="radio" name="ai-provider" value="gemini" class="accent-indigo-600 h-4 w-4">
+                        <div>
+                            <div class="font-bold text-sm text-slate-800">Google Gemini</div>
+                            <div class="text-xs text-slate-500 mt-0.5">Gemini 2.5 Flash-Lite, 1.5 Pro</div>
+                        </div>
+                    </label>
                 </div>
-                <p class="text-sm text-slate-500 mt-1">
-                    Get your free API key from 
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-600 hover:text-blue-700 underline">
-                        Google AI Studio
-                    </a>
-                </p>
             </div>
-            <div class="form-group">
-                <label class="form-label">AI Model</label>
-                <div class="flex gap-2">
-                    <input type="text" id="ai-model" class="form-input flex-1" list="model-suggestions" placeholder="e.g. gemini-2.5-flash-lite">
-                    <datalist id="model-suggestions">
-                        <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite (Default)</option>
-                        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                        <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                        <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Experimental)</option>
-                        <option value="gemma-2-27b-it">Gemma 2 27B</option>
-                        <option value="gemma-2-9b-it">Gemma 2 9B</option>
-                    </datalist>
+
+            <!-- Groq API Configuration Sub-Section -->
+            <div class="p-5 rounded-2xl border-2 border-indigo-100 bg-gradient-to-br from-indigo-50/40 via-white to-purple-50/20 mb-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+                        <i class="fas fa-bolt text-amber-500"></i>
+                        <span>Groq API Configuration</span>
+                    </h3>
+                    <span class="text-xs px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full font-semibold flex items-center gap-1">
+                        <i class="fas fa-tachometer-alt text-amber-600"></i> ~500 tokens/sec
+                    </span>
                 </div>
-                <p class="text-sm text-slate-500 mt-1">Select a suggested model or type any custom Gemini model name (e.g., gemma-1.1-7b-it)</p>
+
+                <div class="form-group">
+                    <label class="form-label font-medium text-slate-700">Groq API Key</label>
+                    <div class="flex gap-2">
+                        <input type="password" id="groq-api-key" class="form-input flex-1 font-mono text-sm" placeholder="gsk_...">
+                        <button id="toggle-groq-api-key" class="btn btn-secondary" type="button" title="Toggle visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1.5 flex items-center gap-1">
+                        <span>Get your free Groq API key from</span>
+                        <a href="https://console.groq.com/keys" target="_blank" class="text-indigo-600 hover:text-indigo-700 underline font-semibold flex items-center gap-1">
+                            console.groq.com/keys <i class="fas fa-external-link-alt text-[10px]"></i>
+                        </a>
+                    </p>
+                </div>
+
+                <div class="form-group mb-4">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="form-label font-medium text-slate-700 mb-0">Groq Primary Model (Auto-Discovered)</label>
+                        <button id="fetch-groq-models-btn" type="button" class="btn btn-secondary btn-sm text-xs flex items-center gap-1.5 py-1 px-3">
+                            <i class="fas fa-sync-alt"></i> <span>Fetch Live Models</span>
+                        </button>
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="groq-model-select" class="form-input flex-1 font-medium">
+                            <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile (Recommended)</option>
+                            <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Ultra Fast)</option>
+                            <option value="mixtral-8x7b-32768">Mixtral 8x7B (32k Context)</option>
+                            <option value="gemma2-9b-it">Gemma 2 9B Instruct</option>
+                            <option value="qwen-qwq-32b">Qwen QwQ 32B Reasoning</option>
+                            <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Distill Llama 70B</option>
+                        </select>
+                    </div>
+                    <div id="groq-models-status" class="text-xs text-slate-500 mt-1.5">
+                        <i class="fas fa-info-circle text-slate-400 mr-1"></i> Click "Fetch Live Models" to query all available models from your Groq account.
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-indigo-100">
+                    <label class="flex items-start cursor-pointer text-sm text-slate-800 font-medium select-none">
+                        <input type="checkbox" id="ai-auto-rotate" class="mr-2.5 mt-0.5 h-4 w-4 rounded accent-indigo-600" checked>
+                        <div>
+                            <span>Intelligent Model Auto-Rotation on Failure</span>
+                            <p class="text-xs text-slate-500 font-normal mt-0.5">
+                                If a model hits a rate limit (429) or server error, TempEd Pro automatically rotates to the next best model (Llama 3.3 70B &rarr; Llama 3.1 8B &rarr; Mixtral 8x7B &rarr; Gemma 2 &rarr; Gemini) with zero interruption.
+                            </p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Gemini API Configuration Sub-Section -->
+            <div class="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 mb-6">
+                <h3 class="font-bold text-base text-slate-900 flex items-center gap-2 mb-4">
+                    <i class="fas fa-robot text-blue-600"></i>
+                    <span>Google Gemini Configuration</span>
+                </h3>
+                <div class="form-group">
+                    <label class="form-label font-medium text-slate-700">Gemini API Key</label>
+                    <div class="flex gap-2">
+                        <input type="password" id="gemini-api-key" class="form-input flex-1 font-mono text-sm" placeholder="Enter your Gemini API key">
+                        <button id="toggle-api-key" class="btn btn-secondary" type="button">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1.5 flex items-center gap-1">
+                        <span>Get your Gemini key from</span>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-600 hover:text-blue-700 underline font-semibold flex items-center gap-1">
+                            Google AI Studio <i class="fas fa-external-link-alt text-[10px]"></i>
+                        </a>
+                    </p>
+                </div>
+                <div class="form-group mb-0">
+                    <label class="form-label font-medium text-slate-700">Gemini Model</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="ai-model" class="form-input flex-1" list="model-suggestions" placeholder="e.g. gemini-2.5-flash-lite">
+                        <datalist id="model-suggestions">
+                            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite (Default)</option>
+                            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                            <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Experimental)</option>
+                            <option value="gemma-2-27b-it">Gemma 2 27B</option>
+                            <option value="gemma-2-9b-it">Gemma 2 9B</option>
+                        </datalist>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1.5">Select a suggested model or type any custom Gemini model name</p>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Temperature Mode</label>
@@ -457,8 +564,7 @@ Your rewrite prompt here..."></textarea>
                 </button>
                 <button id="clear-signature" class="btn btn-danger">
                     <i class="fas fa-trash mr-2"></i> Clear Signature
-                </button>
-                <button id="insert-signature-to-editor" class="btn btn-secondary">
+                 <button id="insert-signature-to-editor" class="btn btn-secondary">
                     <i class="fas fa-plus-circle mr-2"></i> Insert in Editor
                 </button>
             </div>
@@ -476,7 +582,13 @@ Your rewrite prompt here..."></textarea>
 
     <div id="notification" class="notification" style="display: none;"></div>
 
-    <script src="js/settings/settings-manager.js"></script>
-    <script>document.addEventListener("DOMContentLoaded", () => window.SettingsManager && window.SettingsManager.init());</script>
+    <script type="module" src="js/settings/settings-manager.js"></script>
+    <script type="module">
+        import { SettingsManager } from "./js/settings/settings-manager.js";
+        document.addEventListener("DOMContentLoaded", () => {
+            const sm = window.SettingsManager || new SettingsManager();
+            sm.init();
+        });
+    </script>
 </body>
 </html>

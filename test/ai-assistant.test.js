@@ -1,11 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AIAssistant } from '../js/editor/ai-assistant.js';
+import { GroqService } from '../js/editor/groq-service.js';
 
 describe('AIAssistant', () => {
     let assistant;
 
     beforeEach(() => {
         localStorage.clear();
+        vi.restoreAllMocks();
         assistant = new AIAssistant();
     });
 
@@ -40,14 +42,15 @@ describe('AIAssistant', () => {
         expect(assistant.getTemperatureForFeature('optimize')).toBe(0.2);
     });
 
-    it('should throw or return clear error if API key is not configured', async () => {
+    it('should throw or return clear error if no API keys are configured', async () => {
         await expect(assistant.generate({
             feature: 'optimize',
             content: 'Hello world'
         })).rejects.toThrow(/API key/i);
     });
 
-    it('should call GoogleGenerativeAI when API key is provided and return text', async () => {
+    it('should call GoogleGenerativeAI when Gemini is selected and API key is provided', async () => {
+        localStorage.setItem('ai-provider', 'gemini');
         localStorage.setItem('gemini-api-key', 'mock-key');
         const mockGenerateContent = vi.fn().mockResolvedValue({
             response: {
@@ -73,5 +76,131 @@ describe('AIAssistant', () => {
         expect(mockGetGenerativeModel).toHaveBeenCalledWith(expect.objectContaining({
             generationConfig: expect.objectContaining({ temperature: expect.any(Number) })
         }));
+    });
+
+    it('should call GroqService when Groq provider is active', async () => {
+        localStorage.setItem('ai-provider', 'groq');
+        localStorage.setItem('groq-api-key', 'gsk-key');
+        localStorage.setItem('groq-model-name', 'llama-3.3-70b-versatile');
+
+        const spy = vi.spyOn(GroqService, 'generateChatCompletion').mockResolvedValue('<p>Groq output</p>');
+
+        const result = await assistant.generate({
+            feature: 'optimize',
+            content: '<p>Draft</p>'
+        });
+
+        expect(result).toBe('<p>Groq output</p>');
+        expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+            apiKey: 'gsk-key',
+            model: 'llama-3.3-70b-versatile'
+        }));
+    });
+
+    describe('Auto-Rotate Model Fallback System', () => {
+        it('should auto-rotate to next best model when primary model hits a rate limit', async () => {
+            localStorage.setItem('ai-provider', 'groq');
+            localStorage.setItem('groq-api-key', 'gsk-key');
+            localStorage.setItem('groq-model-name', 'llama-3.3-70b-versatile');
+            localStorage.setItem('ai-auto-rotate', 'true');
+
+            const rateLimitError = new Error('Rate limit reached on llama-3.3-70b-versatile');
+            rateLimitError.isRateLimit = true;
+            rateLimitError.status = 429;
+            rateLimitError.model = 'llama-3.3-70b-versatile';
+
+            const spy = vi.spyOn(GroqService, 'generateChatCompletion')
+                .mockRejectedValueOnce(rateLimitError)
+                .mockResolvedValueOnce('<p>Fallback succeeded with instant model</p>');
+
+            const onModelRotated = vi.fn();
+
+            const result = await assistant.generateWithFallback({
+                feature: 'optimize',
+                content: '<p>Draft</p>',
+                onModelRotated
+            });
+
+            expect(result).toBe('<p>Fallback succeeded with instant model</p>');
+            expect(spy).toHaveBeenCalledTimes(2);
+            expect(onModelRotated).toHaveBeenCalledWith(expect.objectContaining({
+                fromModel: 'llama-3.3-70b-versatile',
+                toModel: 'llama-3.1-8b-instant',
+                reason: expect.stringMatching(/rate limit/i)
+            }));
+        });
+
+        it('should track cooldowns and bypass rate-limited models on subsequent requests', async () => {
+            localStorage.setItem('ai-provider', 'groq');
+            localStorage.setItem('groq-api-key', 'gsk-key');
+            localStorage.setItem('groq-model-name', 'llama-3.3-70b-versatile');
+
+            // Put llama-3.3-70b-versatile into cooldown
+            assistant.setCooldown('llama-3.3-70b-versatile', 60000);
+
+            const spy = vi.spyOn(GroqService, 'generateChatCompletion').mockResolvedValue('<p>Instant response</p>');
+
+            const result = await assistant.generateWithFallback({
+                feature: 'suggest',
+                content: '<p>Draft</p>'
+            });
+
+            expect(result).toBe('<p>Instant response</p>');
+            // Should have called the next non-cooled model directly
+            expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+                model: 'llama-3.1-8b-instant'
+            }));
+        });
+
+        it('should throw immediately if auto-rotate is explicitly disabled and error occurs', async () => {
+            localStorage.setItem('ai-provider', 'groq');
+            localStorage.setItem('groq-api-key', 'gsk-key');
+            localStorage.setItem('groq-model-name', 'llama-3.3-70b-versatile');
+            localStorage.setItem('ai-auto-rotate', 'false');
+
+            const rateLimitError = new Error('Rate limit reached');
+            rateLimitError.isRateLimit = true;
+            rateLimitError.status = 429;
+
+            vi.spyOn(GroqService, 'generateChatCompletion').mockRejectedValue(rateLimitError);
+
+            await expect(assistant.generateWithFallback({
+                feature: 'optimize',
+                content: '<p>Draft</p>'
+            })).rejects.toThrow(/Rate limit/i);
+        });
+
+        it('should fall back to Gemini if all Groq models fail and Gemini key is configured', async () => {
+            localStorage.setItem('ai-provider', 'auto');
+            localStorage.setItem('groq-api-key', 'gsk-key');
+            localStorage.setItem('gemini-api-key', 'gemini-mock-key');
+            localStorage.setItem('ai-auto-rotate', 'true');
+
+            // All Groq attempts fail
+            const groqError = new Error('All groq models unavailable');
+            groqError.isRateLimit = true;
+            vi.spyOn(GroqService, 'generateChatCompletion').mockRejectedValue(groqError);
+
+            const mockGenerateContent = vi.fn().mockResolvedValue({
+                response: { text: () => '<p>Gemini fallback text</p>' }
+            });
+            const mockGoogleGenAI = vi.fn().mockImplementation(() => ({
+                getGenerativeModel: () => ({ generateContent: mockGenerateContent })
+            }));
+
+            const onModelRotated = vi.fn();
+
+            const result = await assistant.generateWithFallback({
+                feature: 'tone',
+                content: '<p>Draft</p>',
+                clientClass: mockGoogleGenAI,
+                onModelRotated
+            });
+
+            expect(result).toBe('<p>Gemini fallback text</p>');
+            expect(onModelRotated).toHaveBeenCalledWith(expect.objectContaining({
+                toProvider: 'gemini'
+            }));
+        });
     });
 });

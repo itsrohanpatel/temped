@@ -3,6 +3,8 @@
  * Manages user preferences, Gemini API credentials, prompt templates, custom spam words, and signatures.
  */
 
+import { GroqService } from '../editor/groq-service.js';
+
 export class SettingsManager {
     constructor() {
         this.advancedTempFeatures = ['optimize', 'suggest', 'tone', 'subject', 'rewrite'];
@@ -15,6 +17,42 @@ export class SettingsManager {
     }
 
     loadSettings() {
+        // AI Provider Mode
+        const provider = localStorage.getItem('ai-provider') || 'auto';
+        const providerRadio = document.querySelector(`input[name="ai-provider"][value="${provider}"]`);
+        if (providerRadio) providerRadio.checked = true;
+        this.updateProviderCardStyles(provider);
+
+        // Groq API Configuration
+        const groqApiKey = localStorage.getItem('groq-api-key') || '';
+        const groqKeyEl = document.getElementById('groq-api-key');
+        if (groqKeyEl) groqKeyEl.value = groqApiKey;
+
+        const groqModel = localStorage.getItem('groq-model-name') || 'llama-3.3-70b-versatile';
+        const cachedGroqModels = localStorage.getItem('groq-cached-models');
+        if (cachedGroqModels) {
+            try {
+                const models = JSON.parse(cachedGroqModels);
+                if (Array.isArray(models) && models.length > 0) {
+                    this.populateGroqModelSelect(models, groqModel);
+                } else {
+                    const groqSelect = document.getElementById('groq-model-select');
+                    if (groqSelect) groqSelect.value = groqModel;
+                }
+            } catch (_) {
+                const groqSelect = document.getElementById('groq-model-select');
+                if (groqSelect) groqSelect.value = groqModel;
+            }
+        } else {
+            const groqSelect = document.getElementById('groq-model-select');
+            if (groqSelect) groqSelect.value = groqModel;
+        }
+
+        const autoRotate = localStorage.getItem('ai-auto-rotate') !== 'false';
+        const autoRotateEl = document.getElementById('ai-auto-rotate');
+        if (autoRotateEl) autoRotateEl.checked = autoRotate;
+
+        // Gemini API Configuration
         const geminiApiKey = localStorage.getItem('gemini-api-key') || '';
         const systemPrompt = localStorage.getItem('system-prompt') || 'You are an expert email marketing assistant. Help users create professional, engaging, and spam-filter-friendly emails.';
         
@@ -80,6 +118,12 @@ export class SettingsManager {
 
         bindClick('save-ai-config', () => this.saveAIConfig());
         bindClick('toggle-api-key', () => this.toggleApiKeyVisibility());
+        bindClick('toggle-groq-api-key', () => this.toggleGroqApiKeyVisibility());
+        bindClick('fetch-groq-models-btn', () => this.fetchLiveGroqModels());
+
+        document.querySelectorAll('input[name="ai-provider"]').forEach(radio => {
+            radio.addEventListener('change', (e) => this.updateProviderCardStyles(e.target.value));
+        });
 
         const aiTemp = document.getElementById('ai-temperature');
         if (aiTemp) {
@@ -455,18 +499,139 @@ ${prompts.rewrite}`;
         }
     }
 
-    saveAIConfig() {
-        const apiKeyEl = document.getElementById('gemini-api-key');
+    updateProviderCardStyles(selectedProvider) {
+        ['auto', 'groq', 'gemini'].forEach(p => {
+            const card = document.getElementById(`card-provider-${p}`);
+            if (!card) return;
+            if (p === selectedProvider) {
+                card.style.borderColor = 'var(--color-blue-violet, #6366f1)';
+                card.style.backgroundColor = 'rgba(99, 102, 241, 0.05)';
+            } else {
+                card.style.borderColor = 'var(--color-border, #e2e8f0)';
+                card.style.backgroundColor = 'transparent';
+            }
+        });
+    }
+
+    populateGroqModelSelect(models, selectedValue) {
+        const select = document.getElementById('groq-model-select');
+        if (!select) return;
+
+        select.innerHTML = '';
+        models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.name || m.id;
+            select.appendChild(opt);
+        });
+
+        if (selectedValue && models.some(m => m.id === selectedValue)) {
+            select.value = selectedValue;
+        } else if (models.length > 0) {
+            select.value = models[0].id;
+        }
+    }
+
+    async fetchLiveGroqModels() {
+        const apiKeyEl = document.getElementById('groq-api-key');
         const apiKey = apiKeyEl ? apiKeyEl.value.trim() : '';
-        const promptEl = document.getElementById('system-prompt');
-        const prompt = promptEl ? promptEl.value : '';
 
         if (!apiKey) {
-            this.showNotification('Please enter your Gemini API key', 'error');
+            this.showNotification('Please enter your Groq API key first to discover live models.', 'error');
             return;
         }
 
-        localStorage.setItem('gemini-api-key', apiKey);
+        const btn = document.getElementById('fetch-groq-models-btn');
+        const statusEl = document.getElementById('groq-models-status');
+        const originalBtnHtml = btn ? btn.innerHTML : '';
+
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Discovering...</span>';
+        }
+
+        try {
+            const models = await GroqService.fetchLiveModels(apiKey);
+            const currentSelect = document.getElementById('groq-model-select');
+            const currentVal = currentSelect ? currentSelect.value : null;
+
+            this.populateGroqModelSelect(models, currentVal);
+
+            if (statusEl) {
+                statusEl.innerHTML = `<span class="text-emerald-600 font-semibold"><i class="fas fa-check-circle mr-1"></i> ${models.length} live models discovered from Groq API</span>`;
+            }
+
+            this.showNotification(`Discovered ${models.length} live Groq models!`);
+        } catch (error) {
+            if (statusEl) {
+                statusEl.innerHTML = `<span class="text-rose-500"><i class="fas fa-exclamation-triangle mr-1"></i> ${this.escapeHtml(error.message || 'Failed to fetch models')}</span>`;
+            }
+            this.showNotification(`Could not fetch Groq models: ${error.message || 'Unknown error'}`, 'error');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHtml;
+            }
+        }
+    }
+
+    toggleGroqApiKeyVisibility() {
+        const apiKeyInput = document.getElementById('groq-api-key');
+        const toggleBtn = document.getElementById('toggle-groq-api-key');
+        if (!apiKeyInput || !toggleBtn) return;
+        const icon = toggleBtn.querySelector('i');
+
+        if (apiKeyInput.type === 'password') {
+            apiKeyInput.type = 'text';
+            if (icon) icon.className = 'fas fa-eye-slash';
+        } else {
+            apiKeyInput.type = 'password';
+            if (icon) icon.className = 'fas fa-eye';
+        }
+    }
+
+    saveAIConfig() {
+        const providerRadio = document.querySelector('input[name="ai-provider"]:checked');
+        const provider = providerRadio ? providerRadio.value : 'auto';
+
+        const groqKeyEl = document.getElementById('groq-api-key');
+        const groqApiKey = groqKeyEl ? groqKeyEl.value.trim() : '';
+        const groqSelect = document.getElementById('groq-model-select');
+        const groqModel = groqSelect ? (groqSelect.value.trim() || 'llama-3.3-70b-versatile') : 'llama-3.3-70b-versatile';
+
+        const autoRotateEl = document.getElementById('ai-auto-rotate');
+        const autoRotate = autoRotateEl ? autoRotateEl.checked : true;
+
+        const geminiApiKeyEl = document.getElementById('gemini-api-key');
+        const geminiApiKey = geminiApiKeyEl ? geminiApiKeyEl.value.trim() : '';
+        const promptEl = document.getElementById('system-prompt');
+        const prompt = promptEl ? promptEl.value : '';
+
+        // Validate key based on selected provider
+        if (provider === 'groq' && !groqApiKey) {
+            this.showNotification('Please enter your Groq API key.', 'error');
+            return;
+        }
+        if (provider === 'gemini' && !geminiApiKey) {
+            this.showNotification('Please enter your Gemini API key.', 'error');
+            return;
+        }
+        if (provider === 'auto' && !groqApiKey && !geminiApiKey) {
+            this.showNotification('Please enter at least one API key (Groq or Gemini) for Auto-Rotate mode.', 'error');
+            return;
+        }
+
+        // Save AI settings
+        localStorage.setItem('ai-provider', provider);
+        if (groqApiKey) localStorage.setItem('groq-api-key', groqApiKey);
+        else localStorage.removeItem('groq-api-key');
+
+        localStorage.setItem('groq-model-name', groqModel);
+        localStorage.setItem('ai-auto-rotate', autoRotate ? 'true' : 'false');
+
+        if (geminiApiKey) localStorage.setItem('gemini-api-key', geminiApiKey);
+        else localStorage.removeItem('gemini-api-key');
+
         localStorage.setItem('system-prompt', prompt);
 
         const aiModelEl = document.getElementById('ai-model');
@@ -493,7 +658,7 @@ ${prompts.rewrite}`;
             });
         }
 
-        this.showNotification('Gemini configuration saved successfully!');
+        this.showNotification('AI configuration saved successfully!');
     }
 
     toggleApiKeyVisibility() {
@@ -682,6 +847,13 @@ ${prompts.rewrite}`;
         }
         if (!confirmed) return;
         
+        localStorage.removeItem('ai-provider');
+        localStorage.removeItem('groq-api-key');
+        localStorage.removeItem('groq-model-name');
+        localStorage.removeItem('groq-cached-models');
+        localStorage.removeItem('groq-cached-models-timestamp');
+        localStorage.removeItem('ai-auto-rotate');
+
         localStorage.removeItem('gemini-api-key');
         localStorage.removeItem('system-prompt');
         localStorage.removeItem('custom-spam-words');

@@ -108,16 +108,78 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     this.showAIError('You are offline. Check your internet connection.');
                     return false;
                 }
-                if (!window.GoogleGenerativeAI) {
-                    this.showAIError('Gemini AI library is not loaded. Please refresh the page.');
-                    return false;
-                }
-                const apiKey = localStorage.getItem('gemini-api-key');
-                if (!apiKey || !apiKey.trim()) {
-                    this.showAIError('No Gemini API key found. Please add your API key in Settings.');
-                    return false;
+                const provider = localStorage.getItem('ai-provider') || 'auto';
+                const groqKey = (localStorage.getItem('groq-api-key') || '').trim();
+                const geminiKey = (localStorage.getItem('gemini-api-key') || '').trim();
+
+                if (provider === 'groq') {
+                    if (!groqKey) {
+                        this.showAIError('No Groq API key found. Please add your Groq API key in Settings.');
+                        return false;
+                    }
+                } else if (provider === 'gemini') {
+                    if (!geminiKey) {
+                        this.showAIError('No Gemini API key found. Please add your Gemini API key in Settings.');
+                        return false;
+                    }
+                    if (!window.GoogleGenerativeAI) {
+                        this.showAIError('Gemini AI library is not loaded. Please refresh the page.');
+                        return false;
+                    }
+                } else {
+                    // 'auto' mode
+                    if (!groqKey && !geminiKey) {
+                        this.showAIError('No AI API key found. Please configure a Groq or Gemini API key in Settings.');
+                        return false;
+                    }
                 }
                 return true;
+            },
+
+            getAIAssistant() {
+                if (!this.aiAssistant) {
+                    const AIAssistantClass = window.AIAssistant;
+                    if (AIAssistantClass) {
+                        this.aiAssistant = new AIAssistantClass();
+                    }
+                }
+                return this.aiAssistant;
+            },
+
+            async callAIAssistant(featureKey, variables = {}) {
+                const systemPrompt = localStorage.getItem('system-prompt') || '';
+                const tpl = this.getPromptTemplate(featureKey);
+                const fullPrompt = this.renderPrompt(tpl, { systemPrompt, ...variables });
+
+                const mode = localStorage.getItem('ai-temperature-mode') || 'normal';
+                let tempKey;
+                if (mode === 'advanced' && featureKey) {
+                    tempKey = `ai-temperature-${featureKey}`;
+                } else {
+                    tempKey = 'ai-temperature';
+                }
+                const temperature = parseFloat(
+                    localStorage.getItem(tempKey) || localStorage.getItem('ai-temperature') || '1.0'
+                );
+
+                const assistant = this.getAIAssistant();
+                if (assistant) {
+                    return await assistant.generateWithFallback({
+                        feature: featureKey,
+                        prompt: fullPrompt,
+                        temperature: temperature,
+                        onModelRotated: (details) => {
+                            this.showNotification(`Rotated AI model: ${details.fromModel} failed. Switched to ${details.toModel}.`, 'info');
+                        }
+                    });
+                }
+
+                // Fallback to legacy Gemini client if AIAssistant is not yet initialized
+                const model = this.initGeminiClient(featureKey);
+                const result = await model.generateContent(fullPrompt);
+                const text = this.extractAIText(result);
+                if (!text) throw new Error('Invalid response format from AI');
+                return text;
             },
 
             getPromptTemplate(key) {
@@ -1517,18 +1579,11 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 this.incrementRequestCount();
                 this.showAILoading();
                 try {
-                    const systemPrompt = localStorage.getItem('system-prompt') || '';
-                    const tpl = this.getPromptTemplate('optimize');
-                    const fullPrompt = this.renderPrompt(tpl, { systemPrompt, content });
-                    
-                    const model = this.initGeminiClient('optimize');
-                    const result = await model.generateContent(fullPrompt);
-                    const text = this.extractAIText(result);
-                    if (!text) throw new Error('Invalid response format from AI');
+                    const text = await this.callAIAssistant('optimize', { content });
                     this.showAIResponse(text, 'optimize');
                 } catch (error) {
                     const errorMsg = error.message?.includes('API') || error.message?.includes('key')
-                        ? 'Invalid API key or quota exceeded. Please check your Gemini API key in Settings.'
+                        ? 'Invalid API key or quota exceeded. Please check your AI API key in Settings.'
                         : error.message?.includes('network') || error.message?.includes('fetch')
                         ? 'Network error. Please check your internet connection and try again.'
                         : `Failed to optimize content: ${error.message || 'Unknown error'}`;
@@ -1547,18 +1602,11 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 this.incrementRequestCount();
                 this.showAILoading();
                 try {
-                    const systemPrompt = localStorage.getItem('system-prompt') || '';
-                    const tpl = this.getPromptTemplate('suggest');
-                    const fullPrompt = this.renderPrompt(tpl, { systemPrompt, content });
-                    
-                    const model = this.initGeminiClient('suggest');
-                    const result = await model.generateContent(fullPrompt);
-                    const text = this.extractAIText(result);
-                    if (!text) throw new Error('Invalid response format from AI');
+                    const text = await this.callAIAssistant('suggest', { content });
                     this.showAIResponse(text, 'suggest');
                 } catch (error) {
                     const errorMsg = error.message?.includes('API') || error.message?.includes('key')
-                        ? 'Invalid API key or quota exceeded. Please check your Gemini API key in Settings.'
+                        ? 'Invalid API key or quota exceeded. Please check your AI API key in Settings.'
                         : error.message?.includes('network') || error.message?.includes('fetch')
                         ? 'Network error. Please check your internet connection and try again.'
                         : `Failed to get suggestions: ${error.message || 'Unknown error'}`;
@@ -1609,18 +1657,11 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 this.incrementRequestCount();
                 this.showAILoading();
                 try {
-                    const systemPrompt = localStorage.getItem('system-prompt') || '';
-                    const tpl = this.getPromptTemplate('tone');
-                    const fullPrompt = this.renderPrompt(tpl, { systemPrompt, content, tone });
-                    
-                    const model = this.initGeminiClient('tone');
-                    const result = await model.generateContent(fullPrompt);
-                    const text = this.extractAIText(result);
-                    if (!text) throw new Error('Invalid response format from AI');
+                    const text = await this.callAIAssistant('tone', { content, tone });
                     this.showAIResponse(text, 'tone');
                 } catch (error) {
                     const errorMsg = error.message?.includes('API') || error.message?.includes('key')
-                        ? 'Invalid API key or quota exceeded. Please check your Gemini API key in Settings.'
+                        ? 'Invalid API key or quota exceeded. Please check your AI API key in Settings.'
                         : error.message?.includes('network') || error.message?.includes('fetch')
                         ? 'Network error. Please check your internet connection and try again.'
                         : `Failed to adjust tone: ${error.message || 'Unknown error'}`;
@@ -1639,21 +1680,13 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 this.incrementRequestCount();
                 this.showAILoading();
                 try {
-                    const systemPrompt = localStorage.getItem('system-prompt') || '';
-                    // Pass raw subject line with variables for AI context
                     const currentSubject = this.nodes.subjectLineInput ? this.nodes.subjectLineInput.value : '';
                     const numSubjects = localStorage.getItem('num-subjects') || '10';
-                    const tpl = this.getPromptTemplate('subject');
-                    const fullPrompt = this.renderPrompt(tpl, { systemPrompt, content, subjectLine: currentSubject, numSubjects });
-                    
-                    const model = this.initGeminiClient('subject');
-                    const result = await model.generateContent(fullPrompt);
-                    const text = this.extractAIText(result);
-                    if (!text) throw new Error('Invalid response format from AI');
+                    const text = await this.callAIAssistant('subject', { content, subjectLine: currentSubject, numSubjects });
                     this.showAIResponse(text, 'subject');
                 } catch (error) {
                     const errorMsg = error.message?.includes('API') || error.message?.includes('key')
-                        ? 'Invalid API key or quota exceeded. Please check your Gemini API key in Settings.'
+                        ? 'Invalid API key or quota exceeded. Please check your AI API key in Settings.'
                         : error.message?.includes('network') || error.message?.includes('fetch')
                         ? 'Network error. Please check your internet connection and try again.'
                         : `Failed to generate subject lines: ${error.message || 'Unknown error'}`;
@@ -2495,13 +2528,7 @@ Your responses must always be:
             this.incrementRequestCount();
             this.showAILoading();
             try {
-                const systemPrompt = localStorage.getItem('system-prompt') || '';
-                const tpl = this.getPromptTemplate('rewrite');
-                const fullPrompt = this.renderPrompt(tpl, { systemPrompt, content, terms: JSON.stringify(terms) });
-                
-                const model = this.initGeminiClient('rewrite');
-                const result = await model.generateContent(fullPrompt);
-                const text = this.extractAIText(result) || '';
+                const text = await this.callAIAssistant('rewrite', { content, terms: JSON.stringify(terms) }) || '';
                 const mapping = this.parseReplacementMapping(text);
                 if (!Array.isArray(mapping) || mapping.length === 0) {
                     throw new Error('No valid replacements returned');
@@ -2552,7 +2579,7 @@ Your responses must always be:
                 }
             } catch (error) {
                 const errorMsg = error.message?.includes('API') || error.message?.includes('key')
-                        ? 'Invalid API key or quota exceeded. Please check your Gemini API key in Settings.'
+                        ? 'Invalid API key or quota exceeded. Please check your AI API key in Settings.'
                         : error.message?.includes('network') || error.message?.includes('fetch')
                         ? 'Network error. Please check your internet connection and try again.'
                         : `Failed to rewrite spam words: ${error.message || 'Unknown error'}. Try with fewer terms.`;

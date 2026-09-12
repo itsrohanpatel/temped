@@ -1,10 +1,14 @@
 /**
  * TempEd Pro - AI Assistant Module
- * Integrates with Google Gemini API for email optimization, suggestions, tone changes, and spam rewrites.
+ * Integrates with Google Gemini API and Groq Cloud API for email optimization, suggestions,
+ * tone changes, and spam rewrites, with live model auto-discovery and intelligent auto-rotate fallback.
  */
+
+import { GroqService } from './groq-service.js';
 
 export class AIAssistant {
     constructor() {
+        this.cooldowns = new Map();
         this.defaultPromptTemplates = {
             optimize: `{systemPrompt}
 
@@ -138,15 +142,43 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
         return isNaN(parsed) ? 1.0 : parsed;
     }
 
-    getModelName() {
+    getProvider() {
+        if (typeof localStorage === 'undefined') return 'auto';
+        const saved = localStorage.getItem('ai-provider');
+        if (saved && ['groq', 'gemini', 'auto'].includes(saved)) {
+            return saved;
+        }
+        const groqKey = this.getGroqApiKey();
+        const geminiKey = this.getGeminiApiKey();
+        if (groqKey && !geminiKey) return 'groq';
+        if (geminiKey && !groqKey) return 'gemini';
+        return 'auto';
+    }
+
+    getGeminiApiKey() {
+        if (typeof localStorage === 'undefined') return '';
+        return (localStorage.getItem('gemini-api-key') || '').trim();
+    }
+
+    getGroqApiKey() {
+        if (typeof localStorage === 'undefined') return '';
+        return (localStorage.getItem('groq-api-key') || '').trim();
+    }
+
+    getGeminiModelName() {
         if (typeof localStorage === 'undefined') return 'gemini-2.5-flash-lite';
         const key = (typeof window !== 'undefined' && window.EMAIL_EDITOR_CONSTANTS?.STORAGE_KEYS?.AI_MODEL) || 'ai-model-name';
         return localStorage.getItem(key) || 'gemini-2.5-flash-lite';
     }
 
-    getApiKey() {
-        if (typeof localStorage === 'undefined') return '';
-        return (localStorage.getItem('gemini-api-key') || '').trim();
+    getGroqModelName() {
+        if (typeof localStorage === 'undefined') return 'llama-3.3-70b-versatile';
+        return localStorage.getItem('groq-model-name') || 'llama-3.3-70b-versatile';
+    }
+
+    isAutoRotateEnabled() {
+        if (typeof localStorage === 'undefined') return true;
+        return localStorage.getItem('ai-auto-rotate') !== 'false';
     }
 
     getSystemPrompt() {
@@ -154,32 +186,94 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
         return localStorage.getItem('system-prompt') || 'You are an expert email marketing assistant. Help users create professional, engaging, and spam-filter-friendly emails.';
     }
 
-    async generate({ feature, content = '', subject = '', tone = 'professional', terms = [], clientClass = null }) {
-        const apiKey = this.getApiKey();
-        if (!apiKey) {
-            throw new Error('No Gemini API key found. Please add your API key in Settings.');
-        }
+    setCooldown(modelOrKey, durationMs = 60000) {
+        this.cooldowns.set(modelOrKey, Date.now() + durationMs);
+    }
 
-        const GoogleGenAI = clientClass || (typeof window !== 'undefined' ? window.GoogleGenerativeAI : null);
-        if (!GoogleGenAI) {
-            throw new Error('GoogleGenerativeAI library is not loaded.');
-        }
+    isCooledDown(modelOrKey) {
+        const until = this.cooldowns.get(modelOrKey);
+        return typeof until === 'number' && until > Date.now();
+    }
 
-        const genAI = new GoogleGenAI(apiKey);
-        const temperature = this.getTemperatureForFeature(feature);
-        const modelName = this.getModelName();
+    /**
+     * Build prioritized sequence of fallback model candidates.
+     */
+    getFallbackCandidates() {
+        const provider = this.getProvider();
+        const groqKey = this.getGroqApiKey();
+        const geminiKey = this.getGeminiApiKey();
+        const preferredGroqModel = this.getGroqModelName();
+        const preferredGeminiModel = this.getGeminiModelName();
 
-        const model = genAI.getGenerativeModel({
-            model: modelName,
-            generationConfig: {
-                temperature,
-                maxOutputTokens: 2048
+        const defaultGroqHierarchy = [
+            preferredGroqModel,
+            'llama-3.1-8b-instant',
+            'mixtral-8x7b-32768',
+            'gemma2-9b-it',
+            'qwen-qwq-32b',
+            'deepseek-r1-distill-llama-70b'
+        ];
+
+        // Deduplicate groq hierarchy
+        const uniqueGroqModels = Array.from(new Set(defaultGroqHierarchy));
+
+        const defaultGeminiHierarchy = Array.from(new Set([
+            preferredGeminiModel,
+            'gemini-2.5-flash-lite',
+            'gemini-1.5-flash',
+            'gemini-1.5-pro'
+        ]));
+
+        const candidates = [];
+
+        if (provider === 'groq' && groqKey) {
+            uniqueGroqModels.forEach(model => {
+                candidates.push({ provider: 'groq', model, apiKey: groqKey });
+            });
+        } else if (provider === 'gemini' && geminiKey) {
+            defaultGeminiHierarchy.forEach(model => {
+                candidates.push({ provider: 'gemini', model, apiKey: geminiKey });
+            });
+        } else {
+            // 'auto' mode or hybrid fallback: prioritize Groq for speed, fall back to Gemini
+            if (groqKey) {
+                uniqueGroqModels.forEach(model => {
+                    candidates.push({ provider: 'groq', model, apiKey: groqKey });
+                });
             }
-        });
+            if (geminiKey) {
+                defaultGeminiHierarchy.forEach(model => {
+                    candidates.push({ provider: 'gemini', model, apiKey: geminiKey });
+                });
+            }
+        }
 
+        return candidates;
+    }
+
+    /**
+     * Generate content with intelligent model auto-rotation fallback.
+     */
+    async generateWithFallback({
+        feature,
+        content = '',
+        subject = '',
+        tone = 'professional',
+        terms = [],
+        clientClass = null,
+        fetchFn = null,
+        onModelRotated = null
+    }) {
+        const candidates = this.getFallbackCandidates();
+        if (candidates.length === 0) {
+            throw new Error('No AI API key found. Please configure your Groq or Gemini API key in Settings.');
+        }
+
+        const autoRotate = this.isAutoRotateEnabled();
         const template = this.getPromptTemplate(feature);
+        const systemPrompt = this.getSystemPrompt();
         const formattedPrompt = this.formatPrompt(template, {
-            systemPrompt: this.getSystemPrompt(),
+            systemPrompt,
             content,
             subjectLine: subject,
             subject,
@@ -187,9 +281,82 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
             numSubjects: (typeof localStorage !== 'undefined' && localStorage.getItem('num-subjects')) || '10',
             terms: JSON.stringify(terms)
         });
+        const temperature = this.getTemperatureForFeature(feature);
 
-        const result = await model.generateContent(formattedPrompt);
-        return result.response.text();
+        // Filter out candidates in active cooldown, but keep all if all are cooled
+        let activeCandidates = candidates.filter(c => !this.isCooledDown(c.model));
+        if (activeCandidates.length === 0) {
+            activeCandidates = candidates;
+        }
+
+        let lastError = null;
+
+        for (let i = 0; i < activeCandidates.length; i++) {
+            const candidate = activeCandidates[i];
+
+            try {
+                if (candidate.provider === 'groq') {
+                    const messages = [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: formattedPrompt }
+                    ];
+                    return await GroqService.generateChatCompletion({
+                        apiKey: candidate.apiKey,
+                        model: candidate.model,
+                        messages,
+                        temperature,
+                        maxTokens: 2048,
+                        fetchFn: fetchFn || (typeof fetch !== 'undefined' ? fetch : null)
+                    });
+                } else if (candidate.provider === 'gemini') {
+                    const GoogleGenAI = clientClass || (typeof window !== 'undefined' ? window.GoogleGenerativeAI : null);
+                    if (!GoogleGenAI) {
+                        throw new Error('GoogleGenerativeAI library is not loaded.');
+                    }
+                    const genAI = new GoogleGenAI(candidate.apiKey);
+                    const model = genAI.getGenerativeModel({
+                        model: candidate.model,
+                        generationConfig: {
+                            temperature,
+                            maxOutputTokens: 2048
+                        }
+                    });
+                    const result = await model.generateContent(formattedPrompt);
+                    return result.response.text();
+                }
+            } catch (err) {
+                lastError = err;
+
+                // Cooldown the failing model (60s for rate limit, 30s for other errors)
+                const cooldownDuration = err.isRateLimit ? 60000 : 30000;
+                this.setCooldown(candidate.model, cooldownDuration);
+
+                if (!autoRotate) {
+                    throw err;
+                }
+
+                // If another candidate exists, trigger rotation callback and continue
+                const nextCandidate = activeCandidates[i + 1];
+                if (nextCandidate && typeof onModelRotated === 'function') {
+                    onModelRotated({
+                        fromModel: candidate.model,
+                        fromProvider: candidate.provider,
+                        toModel: nextCandidate.model,
+                        toProvider: nextCandidate.provider,
+                        reason: err.message || 'Error occurred'
+                    });
+                }
+            }
+        }
+
+        throw lastError || new Error('All candidate AI models failed.');
+    }
+
+    /**
+     * Backward-compatible generate method.
+     */
+    async generate(options) {
+        return this.generateWithFallback(options);
     }
 }
 
