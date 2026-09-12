@@ -246,6 +246,43 @@ const EmailEditorUtils = {
     },
     
     /**
+     * Sanitize HTML to prevent XSS attacks while preserving email layouts
+     * @param {string} html - Raw HTML
+     * @returns {string} Sanitized HTML
+     */
+    sanitizeHtml(html) {
+        if (!html) return '';
+        if (typeof window !== 'undefined' && window.DOMPurify) {
+            return window.DOMPurify.sanitize(html, {
+                ADD_TAGS: ['style'],
+                ADD_ATTR: ['target', 'style']
+            });
+        }
+        // Fallback sanitizer if DOMPurify is not available
+        return html
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/on\w+\s*=\s*"[^"]*"/gi, '')
+            .replace(/on\w+\s*=\s*'[^']*'/gi, '')
+            .replace(/javascript:[^"']*/gi, '');
+    },
+
+    /**
+     * Builds regex matching whole words with safe escaping
+     * @param {string} word - Keyword
+     * @returns {RegExp|null}
+     */
+    buildWordRegex(word) {
+        if (!word) return null;
+        const trimmed = word.trim();
+        const escaped = this.escapeRegex(trimmed);
+        const startsWithWord = /^\w/.test(trimmed);
+        const endsWithWord = /\w$/.test(trimmed);
+        const prefix = startsWithWord ? '\\b' : '(?<!\\w)';
+        const suffix = endsWithWord ? '\\b' : '(?!\\w)';
+        return new RegExp(prefix + escaped + suffix, 'gi');
+    },
+
+    /**
      * Escape HTML to prevent XSS
      * @param {string} str - String to escape
      * @returns {string} Escaped string
