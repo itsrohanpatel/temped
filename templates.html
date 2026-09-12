@@ -3,220 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Templates Library</title>
+    <title>TempEd Pro - Templates Library</title>
+    <link rel="stylesheet" href="shared-styles.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <style>
-        /* Custom Color Palette */
-        :root {
-            --color-black: #080708;
-            --color-carrot-orange: #e89005;
-            --color-poppy: #df2935;
-            --color-blue-violet: #8338ec;
-            --color-platinum: #e6e8e6;
-            --color-platinum-dark: #d0d2d0;
-            --color-white: #ffffff;
-            --color-light-bg: #f8f9fa;
-            
-            /* Semantic colors */
-            --color-primary: var(--color-blue-violet);
-            --color-success: var(--color-carrot-orange);
-            --color-warning: var(--color-poppy);
-            --color-text: var(--color-black);
-            --color-text-muted: #4a4a4a;
-            --color-border: var(--color-platinum);
-            --color-bg: var(--color-light-bg);
-            
-            /* Transitions */
-            --transition-smooth: all 0.3s ease-in-out;
-            --transition-fast: all 0.15s ease-in-out;
-        }
-        
-        * {
-            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: linear-gradient(135deg, #f8f9fa 0%, var(--color-platinum) 100%);
-            color: var(--color-text);
-            padding-bottom: 2rem;
-        }
-        
-        .card { 
-            background: white; 
-            border-radius: 1rem; 
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08); 
-            border: 2px solid var(--color-platinum);
-            transition: var(--transition-fast);
-        }
-        .card:hover {
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-            transform: translateY(-4px);
-            border-color: var(--color-blue-violet);
-        }
-        
-        .btn { 
-            padding: 0.625rem 1rem; 
-            border-radius: 0.75rem; 
-            font-weight: 600; 
-            transition: var(--transition-fast);
-            border: none;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .btn-primary { 
-            background: var(--color-blue-violet); 
-            color: white;
-        }
-        .btn-primary:hover { 
-            background: #6d2bc5;
-            box-shadow: 0 4px 12px rgba(131, 56, 236, 0.4);
-            transform: translateY(-1px);
-        }
-        
-        .btn-secondary { 
-            background: var(--color-platinum); 
-            color: var(--color-text);
-        }
-        .btn-secondary:hover { 
-            background: var(--color-platinum-dark);
-            transform: translateY(-1px);
-        }
-        
-        .btn-danger { 
-            background: var(--color-poppy); 
-            color: white;
-        }
-        .btn-danger:hover { 
-            background: #c71f2a;
-            box-shadow: 0 4px 12px rgba(223, 41, 53, 0.4);
-            transform: translateY(-1px);
-        }
-        
-        .btn-ghost { 
-            background: transparent;
-            color: var(--color-text-muted);
-        }
-        .btn-ghost:hover { 
-            color: var(--color-text);
-            background: var(--color-platinum);
-        }
-        
-        .btn-export {
-            background: var(--color-carrot-orange);
-            color: white;
-        }
-        .btn-export:hover {
-            background: #d17f04;
-            box-shadow: 0 4px 12px rgba(232, 144, 5, 0.4);
-            transform: translateY(-1px);
-        }
-        
-        .mono { 
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; 
-        }
-        
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: var(--color-platinum);
-            border-radius: 5px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: var(--color-blue-violet);
-            border-radius: 5px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: var(--color-carrot-orange);
-        }
-    </style>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <script src="shared-utils.js"></script>
+    <style>
+        .mono { 
+            font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; 
+        }
+    </style>
 </head>
-<body>
-    <!-- Modern Header -->
-    <div class="sticky top-0 z-50 backdrop-blur-lg bg-white/80 border-b-2 shadow-sm" style="border-color: var(--color-platinum);">
-        <div class="container mx-auto px-4 md:px-8 py-4 max-w-6xl">
+<body class="text-slate-900 bg-slate-50 antialiased min-h-screen flex flex-col">
+
+    <!-- Global Navigation Header -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-white/90 border-b border-slate-200 shadow-sm">
+        <div class="container mx-auto px-4 md:px-6 py-3 max-w-7xl">
             <div class="flex items-center justify-between">
+                <!-- Brand Logo & Title -->
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, var(--color-blue-violet) 0%, var(--color-carrot-orange) 100%);">
-                        <i class="fas fa-folder-open text-white text-lg"></i>
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-600 text-white shadow-sm shadow-indigo-200">
+                        <i class="fas fa-layer-group text-sm"></i>
                     </div>
-                    <h1 class="text-2xl font-bold" style="background: linear-gradient(135deg, var(--color-blue-violet), var(--color-carrot-orange)); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent;">
-                        Templates Library
-                    </h1>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-lg tracking-tight text-slate-900">TempEd</span>
+                        <span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-wider">Pro</span>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <a href="index.html" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left mr-2"></i> Back to Editor
+
+                <!-- Global Nav Tabs -->
+                <nav class="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200" aria-label="Main Navigation">
+                    <a href="index.html" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+                        <i class="fas fa-code text-slate-400"></i>
+                        <span>Editor</span>
                     </a>
-                    <a href="settings.html" class="btn btn-ghost">
-                        <i class="fas fa-cog mr-2"></i> Settings
+                    <a href="templates.html" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-white text-slate-900 shadow-sm flex items-center gap-1.5" aria-current="page">
+                        <i class="fas fa-folder text-indigo-500"></i>
+                        <span>Templates</span>
+                    </a>
+                    <a href="settings.html" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+                        <i class="fas fa-cog text-slate-400"></i>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+
+                <!-- Quick Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <a href="https://github.com/itsrohanpatel/temped" target="_blank" rel="noopener noreferrer" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all" title="GitHub Repository">
+                        <i class="fab fa-github"></i>
                     </a>
                 </div>
             </div>
         </div>
-    </div>
+    </header>
     
-    <div class="container mx-auto p-4 md:p-8 max-w-6xl">
-        <div style="margin-bottom: 2rem;"></div>
-
-        <div id="empty-state" class="card p-12 text-center hidden">
-            <div class="flex flex-col items-center" style="color: var(--color-text-muted);">
-                <div class="w-20 h-20 rounded-full flex items-center justify-center mb-4" style="background: linear-gradient(135deg, rgba(131, 56, 236, 0.1), rgba(232, 144, 5, 0.1)); border: 2px solid var(--color-platinum);">
-                    <i class="fas fa-box-open text-4xl" style="color: var(--color-blue-violet);"></i>
-                </div>
-                <p class="text-xl font-bold mb-2" style="color: var(--color-text);">No templates saved yet</p>
-                <p class="text-sm mb-4">Go back to the editor and save your first template.</p>
-                <a href="index.html" class="btn btn-primary mt-2">
-                    <i class="fas fa-plus mr-2"></i> Create Your First Template
+    <main class="container mx-auto px-4 md:px-6 py-8 max-w-6xl flex-grow">
+        <!-- Page Title & Header Banner -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                    <i class="fas fa-folder-open text-indigo-600"></i>
+                    <span>Template Library</span>
+                </h1>
+                <p class="text-sm text-slate-500 mt-1">Manage, preview, and load your custom email marketing and transactional templates.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="index.html" class="btn btn-primary text-xs py-2 px-3.5">
+                    <i class="fas fa-plus mr-1.5"></i> Create New Template
                 </a>
             </div>
         </div>
 
-        <div id="templates-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </div>
+        <!-- Empty State -->
+        <div id="empty-state" class="card p-12 text-center hidden max-w-lg mx-auto my-12 border-dashed border-2 border-slate-300">
+            <div class="flex flex-col items-center text-slate-500">
+                <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-indigo-50 text-indigo-600 border border-indigo-100">
+                    <i class="fas fa-box-open text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-1">No templates saved yet</h3>
+                <p class="text-xs text-slate-500 mb-5 max-w-xs">Create and save templates in the editor to build your reusable email library.</p>
+                <a href="index.html" class="btn btn-primary text-xs py-2 px-4">
+                    <i class="fas fa-plus mr-1.5"></i> Open Editor
+                </a>
+            </div>
+        </div>
+
+        <!-- Templates Grid -->
+        <div id="templates-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    </main>
 
     <!-- Preview Modal -->
-    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-2xl p-8 w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl border-2" style="border-color: var(--color-blue-violet);">
-            <div class="flex justify-between items-center mb-6">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, var(--color-blue-violet), var(--color-carrot-orange));">
-                        <i class="fas fa-eye text-white"></i>
+    <div id="preview-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-4" role="dialog" aria-modal="true">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl border border-slate-200 flex flex-col">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-50 text-indigo-600">
+                        <i class="fas fa-eye text-sm"></i>
                     </div>
-                    <h2 class="text-2xl font-bold" id="preview-title" style="color: var(--color-text);">Template Preview</h2>
+                    <h2 class="text-base font-bold text-slate-900" id="preview-title">Template Preview</h2>
                 </div>
-                <button id="close-preview" class="text-2xl w-10 h-10 rounded-lg transition-all" style="color: var(--color-text-muted);" onmouseover="this.style.background='var(--color-platinum)'" onmouseout="this.style.background='transparent'">&times;</button>
+                <button id="close-preview" class="text-slate-400 hover:text-slate-700 text-lg leading-none p-1">&times;</button>
             </div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[70vh]">
-                <div class="border-2 rounded-xl overflow-auto p-4 custom-scrollbar" style="background: var(--color-light-bg); border-color: var(--color-platinum);">
-                    <div class="text-xs uppercase tracking-wide font-bold mb-3 flex items-center" style="color: var(--color-text-muted);">
-                        <i class="fas fa-code mr-2"></i>HTML Source
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[65vh] overflow-hidden">
+                <!-- HTML Source View -->
+                <div class="border border-slate-800 bg-slate-900 rounded-xl overflow-auto p-4 custom-scrollbar">
+                    <div class="text-[10px] uppercase tracking-wider font-bold mb-2 flex items-center text-slate-400">
+                        <i class="fas fa-code mr-1.5 text-indigo-400"></i>HTML Source
                     </div>
-                    <pre id="preview-html" class="mono text-sm whitespace-pre-wrap" style="color: var(--color-text);"></pre>
+                    <pre id="preview-html" class="mono text-xs text-slate-200 whitespace-pre-wrap leading-relaxed"></pre>
                 </div>
-                <div class="border-2 rounded-xl overflow-auto p-4 bg-white custom-scrollbar" style="border-color: var(--color-platinum);">
-                    <div class="text-xs uppercase tracking-wide font-bold mb-3 flex items-center" style="color: var(--color-text-muted);">
-                        <i class="fas fa-desktop mr-2"></i>Rendered Preview
+                <!-- Rendered Preview -->
+                <div class="border border-slate-200 rounded-xl overflow-auto p-5 bg-white custom-scrollbar">
+                    <div class="text-[10px] uppercase tracking-wider font-bold mb-2 flex items-center text-slate-500">
+                        <i class="fas fa-desktop mr-1.5 text-emerald-500"></i>Rendered Output
                     </div>
-                    <div id="preview-rendered" class="prose prose-sm max-w-none" style="color: var(--color-text);"></div>
+                    <div id="preview-rendered" class="prose prose-sm max-w-none text-slate-800"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="notification" class="fixed top-20 right-6 text-white px-6 py-3 rounded-xl shadow-2xl hidden font-semibold flex items-center gap-2" style="background: var(--color-carrot-orange);">
+    <!-- Notification Toast -->
+    <div id="notification" class="fixed top-16 right-6 text-white px-4 py-2.5 rounded-xl shadow-xl hidden font-semibold flex items-center gap-2 transform transition-all duration-300 translate-x-12 opacity-0 z-[60] text-xs bg-indigo-600">
         <i class="fas fa-check-circle"></i>
         <span id="notification-text"></span>
     </div>
@@ -256,6 +171,7 @@
                 }
                 this.empty.classList.add('hidden');
                 this.container.innerHTML = templates.map((t) => this.templateCard(t)).join('');
+                
                 // attach handlers
                 this.container.querySelectorAll('[data-action="use"]').forEach(btn => btn.addEventListener('click', (e) => this.useTemplate(e)));
                 this.container.querySelectorAll('[data-action="preview"]').forEach(btn => btn.addEventListener('click', (e) => this.previewTemplate(e)));
@@ -263,38 +179,43 @@
                 this.container.querySelectorAll('[data-action="export"]').forEach(btn => btn.addEventListener('click', (e) => this.exportTemplate(e)));
             },
             templateCard(t) {
-                const name = this.escape(t.name || `Template`);
-                const time = t.timestamp ? new Date(t.timestamp).toLocaleString() : '';
-                const snippet = (t.html || '').replace(/<[^>]*>/g, '').slice(0, 100);
-                const id = t.timestamp; // Use timestamp as unique ID
+                const name = this.escape(t.name || 'Template');
+                const time = t.timestamp ? new Date(t.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+                const snippet = (t.html || '').replace(/<[^>]*>/g, '').trim().slice(0, 100);
+                const id = t.timestamp;
+                const varCount = (t.variables || []).length;
+
                 return `
-                <div class="card p-5 flex flex-col" data-id="${this.escapeAttr(id)}">
-                    <div class="mb-3">
-                        <div class="font-bold text-lg mb-1" style="color: var(--color-text);">${name}</div>
-                        <div class="text-xs flex items-center" style="color: var(--color-text-muted);">
-                            <i class="fas fa-clock mr-1"></i>${time}
+                <div class="card p-5 flex flex-col justify-between" data-id="${this.escapeAttr(id)}">
+                    <div>
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <h3 class="font-bold text-sm text-slate-900 truncate" title="${this.escapeAttr(t.name)}">${name}</h3>
+                            <span class="text-[11px] text-slate-400 shrink-0">${time}</span>
                         </div>
+                        <p class="text-xs text-slate-500 mb-4 line-clamp-3 leading-relaxed min-h-[3rem]">${this.escape(snippet || 'No HTML preview available')}...</p>
                     </div>
-                    <div class="text-sm mb-4 line-clamp-3" style="color: var(--color-text-muted); min-height: 3.5rem;">${this.escape(snippet)}...</div>
-                    <div class="flex items-center gap-2 mb-3 pb-3 border-b-2" style="border-color: var(--color-platinum);">
-                        <button class="btn btn-primary flex-1" data-action="use" data-name="${this.escapeAttr(t.name)}">
-                            <i class="fas fa-check mr-1"></i>Use
-                        </button>
-                        <button class="btn btn-secondary flex-1" data-action="preview" data-id="${this.escapeAttr(id)}">
-                            <i class="fas fa-eye mr-1"></i>Preview
-                        </button>
-                    </div>
-                    <div class="flex items-center justify-between text-sm">
-                        <div class="text-xs px-2 py-1 rounded-lg" style="background: var(--color-light-bg); color: var(--color-text); border: 1px solid var(--color-platinum);">
-                            <i class="fas fa-tag mr-1"></i>${(t.variables || []).length} Variables
+
+                    <div>
+                        <div class="flex items-center gap-2 mb-3 pt-3 border-t border-slate-100">
+                            <button class="btn btn-primary flex-1 text-xs py-1.5" data-action="use" data-name="${this.escapeAttr(t.name)}">
+                                <i class="fas fa-check mr-1"></i> Use
+                            </button>
+                            <button class="btn btn-secondary flex-1 text-xs py-1.5" data-action="preview" data-id="${this.escapeAttr(id)}">
+                                <i class="fas fa-eye mr-1"></i> Preview
+                            </button>
                         </div>
-                        <div class="flex gap-2">
-                            <button class="btn btn-export" data-action="export" data-id="${this.escapeAttr(id)}">
-                                <i class="fas fa-download"></i>
-                            </button>
-                            <button class="btn btn-danger" data-action="delete" data-id="${this.escapeAttr(id)}">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                        <div class="flex items-center justify-between text-xs pt-1">
+                            <span class="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                <i class="fas fa-tag mr-1 text-slate-400"></i>${varCount} Variable${varCount === 1 ? '' : 's'}
+                            </span>
+                            <div class="flex items-center gap-1">
+                                <button class="p-1.5 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100" data-action="export" data-id="${this.escapeAttr(id)}" title="Export JSON">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="p-1.5 rounded-md text-rose-500 hover:text-rose-700 hover:bg-rose-50" data-action="delete" data-id="${this.escapeAttr(id)}" title="Delete Template">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>`;
@@ -302,9 +223,8 @@
             useTemplate(e) {
                 const name = e.currentTarget.getAttribute('data-name');
                 if (!name) return;
-                // Set flag for editor to pick up
                 localStorage.setItem('template-to-load', name);
-                this.notify('Template selected. Opening editor...');
+                this.notify('Template loaded. Redirecting to editor...');
                 window.location.href = 'index.html';
             },
             previewTemplate(e) {
@@ -351,23 +271,13 @@
             notify(msg, type = 'success') {
                 const n = document.getElementById('notification');
                 const text = document.getElementById('notification-text');
-                
                 if (!n || !text) return;
-                
                 text.textContent = msg;
-                n.className = "fixed top-24 right-6 text-white px-6 py-3 rounded-xl shadow-2xl font-semibold flex items-center gap-2 transform transition-all duration-300 z-[60]";
-                
-                if (type === 'error') {
-                    n.style.background = 'var(--color-poppy)';
-                } else {
-                    n.style.background = 'var(--color-blue-violet)';
-                }
-                
+                n.className = `fixed top-16 right-6 text-white px-4 py-2.5 rounded-xl shadow-xl font-semibold flex items-center gap-2 transform transition-all duration-300 z-[60] text-xs ${type === 'error' ? 'bg-rose-600' : 'bg-indigo-600'}`;
                 n.classList.remove('hidden');
                 void n.offsetWidth;
                 n.style.opacity = '1';
                 n.style.transform = 'translateX(0)';
-                
                 setTimeout(() => {
                     n.style.opacity = '0';
                     n.style.transform = 'translateX(12px)';
@@ -378,12 +288,8 @@
             escapeAttr(s) { return String(s || '').replace(/["'<>&]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
         };
 
-        // Export to window for inline onclick handlers
         window.TemplatesPage = TemplatesPage;
-
         document.addEventListener('DOMContentLoaded', () => TemplatesPage.init());
     </script>
 </body>
 </html>
-
-

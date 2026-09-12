@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Email Template Previewer</title>
+    <title>TempEd Pro - Professional Email Template Editor</title>
     <link rel="stylesheet" href="shared-styles.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
@@ -19,209 +19,83 @@
         import { GoogleGenerativeAI } from "@google/generative-ai";
         window.GoogleGenerativeAI = GoogleGenerativeAI;
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
-        /* Custom Color Palette */
-        :root {
-            --color-black: #080708;
-            --color-carrot-orange: #e89005;
-            --color-poppy: #df2935;
-            --color-blue-violet: #8338ec;
-            --color-platinum: #e6e8e6;
-            --color-platinum-dark: #d0d2d0;
-            --color-white: #ffffff;
-            --color-light-bg: #f8f9fa;
-            
-            /* Semantic colors */
-            --color-primary: var(--color-blue-violet);
-            --color-success: var(--color-carrot-orange);
-            --color-warning: var(--color-poppy);
-            --color-text: var(--color-black);
-            --color-text-muted: #4a4a4a;
-            --color-border: var(--color-platinum);
-            --color-bg: var(--color-light-bg);
-            
-            /* Transitions */
-            --transition-smooth: all 0.3s ease-in-out;
-            --transition-fast: all 0.15s ease-in-out;
-        }
-        
-        * {
-            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-        }
-        
+        /* Modernized Styles for TempEd Pro */
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f8f9fa 0%, var(--color-platinum) 100%);
-            padding-bottom: 70px; /* Space for status bar */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--color-bg);
             color: var(--color-text);
+            padding-bottom: 50px;
         }
-        
-        /* Mobile responsiveness improvements */
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem !important;
-            }
-            
-            .grid-cols-1.lg\\:grid-cols-2 {
-                grid-template-columns: 1fr !important;
-                gap: 1rem !important;
-            }
-            
-            .toolbar {
-                flex-wrap: wrap !important;
-                gap: 0.5rem !important;
-            }
-            
-            .toolbar-btn, .toolbar-select {
-                padding: 0.5rem !important;
-                font-size: 0.875rem !important;
-            }
-            
-            #email-preview {
-                min-height: 200px !important;
-            }
-            
-            .grid.grid-cols-1.md\\:grid-cols-2 {
-                grid-template-columns: 1fr !important;
-            }
-            
-            .fixed.bottom-0 {
-                font-size: 0.75rem !important;
-                padding: 0.5rem !important;
-            }
+
+        .mono {
+            font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
-        
-        @media (max-width: 640px) {
-            .p-6 {
-                padding: 1rem !important;
-            }
-            
-            .p-8 {
-                padding: 1rem !important;
-            }
-            
-            .text-xl {
-                font-size: 1.125rem !important;
-            }
-            
-            .space-x-4 > * + * {
-                margin-left: 0.5rem !important;
-            }
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: var(--color-platinum);
-            border-radius: 5px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: var(--color-blue-violet);
-            border-radius: 5px;
-            transition: var(--transition-fast);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: var(--color-carrot-orange);
-        }
+
+        /* Subtle focus states */
         #email-preview:focus {
-            outline: 2px solid var(--color-blue-violet);
-            outline-offset: 2px;
-            box-shadow: 0 0 0 4px rgba(131, 56, 236, 0.1);
+            outline: none;
+            box-shadow: 0 0 0 2px var(--color-indigo-500);
         }
+
+        /* Toolbar button styling */
         .toolbar-btn {
-            background: var(--color-platinum);
-            color: var(--color-text);
+            background: transparent;
+            color: var(--color-slate-600);
             font-weight: 500;
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.5rem;
-            transition: var(--transition-fast);
+            padding: 0.375rem 0.625rem;
+            border-radius: 0.375rem;
             border: 1px solid transparent;
+            font-size: 0.8125rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         .toolbar-btn:hover:not(:disabled) {
-            background: var(--color-blue-violet);
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(131, 56, 236, 0.3);
+            background: var(--color-slate-200);
+            color: var(--color-slate-900);
         }
         .toolbar-btn:disabled {
-            opacity: 0.4;
+            opacity: 0.35;
             cursor: not-allowed;
         }
         .toolbar-select {
-            background: var(--color-platinum);
-            color: var(--color-text);
+            background: var(--color-slate-100);
+            color: var(--color-slate-700);
             font-weight: 500;
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.5rem;
-            transition: var(--transition-fast);
+            padding: 0.3125rem 0.625rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            border: 1px solid var(--color-slate-200);
             appearance: none;
             cursor: pointer;
-            border: 1px solid transparent;
         }
         .toolbar-select:hover {
-            background: var(--color-platinum-dark);
-            border-color: var(--color-blue-violet);
+            border-color: var(--color-slate-300);
+            color: var(--color-slate-900);
         }
-        .input-field {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: white;
-            border: 2px solid var(--color-platinum);
-            border-radius: 0.75rem;
-            transition: var(--transition-fast);
-            color: var(--color-text);
-        }
-        .input-field:focus {
-            outline: none;
-            border-color: var(--color-blue-violet);
-            box-shadow: 0 0 0 4px rgba(131, 56, 236, 0.1);
-        }
-        input[type="color"]::-webkit-color-swatch-wrapper {
-            padding: 0;
-        }
-        input[type="color"]::-webkit-color-swatch {
-            border: none;
-            border-radius: 4px;
-        }
-        
-        /* --- STYLES FOR SPAM CHECKER INTEGRATION --- */
+
+        /* Highlight container for spam words */
         .hwt-container {
             position: relative;
             display: block;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: var(--color-black);
+            background-color: var(--color-slate-900);
             border-radius: 0.75rem;
-            border: 2px solid var(--color-platinum);
-            transition: var(--transition-fast);
+            border: 1px solid var(--color-slate-800);
         }
         .hwt-container:focus-within {
-            border-color: var(--color-blue-violet);
-            box-shadow: 0 0 0 4px rgba(131, 56, 236, 0.1);
+            border-color: var(--color-indigo-500);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
         }
         .hwt-backdrop {
-            position: absolute;
-            top: 0; right: 0; bottom: 0; left: 0;
-            overflow: auto;
-            pointer-events: none;
-            padding: 0; /* Reset for plugin */
-            margin: 0;
-        }
-        .hwt-highlights {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            color: transparent;
-            -webkit-text-fill-color: transparent;
-            font-family: inherit;
-            font-size: inherit;
-            line-height: inherit;
-            letter-spacing: inherit;
-            padding: 1rem; /* Must match textarea */
-            border: none;
-            margin: 0;
+            display: none !important;
         }
         .hwt-content {
             display: block;
@@ -233,374 +107,93 @@
             display: block;
             position: relative;
             margin: 0;
-            color: var(--color-platinum);
+            color: var(--color-slate-100);
             background-color: transparent !important;
             resize: none;
             width: 100%;
             height: 100%;
-            font-family: inherit; /* Mirror parent */
-            font-size: 0.875rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
             line-height: 1.6;
-            padding: 1rem !important; /* Fixed padding */
+            padding: 1rem !important;
             border: none !important;
             outline: none !important;
             box-shadow: none !important;
         }
+
+        /* Spam category mark highlights */
         mark {
             padding: 0 2px;
-            border-radius: 4px;
-            color: transparent;
-            -webkit-text-fill-color: transparent;
+            border-radius: 3px;
         }
         mark.spam-category-urgency { 
-            background-color: rgba(223, 41, 53, 0.5);
-            border-bottom: 2px solid var(--color-poppy);
+            background-color: rgba(244, 63, 94, 0.35);
+            border-bottom: 2px solid var(--color-rose-500);
+            color: #ffffff;
         }
         mark.spam-category-shady { 
-            background-color: rgba(131, 56, 236, 0.3);
-            border-bottom: 2px solid var(--color-blue-violet);
+            background-color: rgba(99, 102, 241, 0.3);
+            border-bottom: 2px solid var(--color-indigo-500);
+            color: #ffffff;
         }
         mark.spam-category-money { 
-            background-color: rgba(232, 144, 5, 0.4);
-            border-bottom: 2px solid var(--color-carrot-orange);
+            background-color: rgba(245, 158, 11, 0.3);
+            border-bottom: 2px solid var(--color-amber-500);
+            color: #ffffff;
         }
         mark.spam-category-overpromise { 
-            background-color: rgba(232, 144, 5, 0.3);
-            border-bottom: 2px solid var(--color-carrot-orange);
+            background-color: rgba(245, 158, 11, 0.3);
+            border-bottom: 2px solid var(--color-amber-500);
+            color: #ffffff;
         }
         mark.spam-category-unnatural { 
-            background-color: rgba(131, 56, 236, 0.2);
-            border-bottom: 2px solid var(--color-blue-violet);
+            background-color: rgba(148, 163, 184, 0.3);
+            border-bottom: 2px solid var(--color-slate-400);
+            color: #ffffff;
         }
-        /* Make preview text inside marks visible */
         #email-preview mark { color: inherit; -webkit-text-fill-color: inherit; }
-        /* Hide highlights in the left source editor overlay */
-        .hwt-backdrop { display: none !important; }
 
+        /* Spam sidebar table */
         #spam-checker--aside table { 
             width: 100%;
-            margin-bottom: 1rem;
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
         }
         #spam-checker--aside td { 
-            padding: 0.5rem 0;
-            color: var(--color-text-muted);
+            padding: 0.375rem 0;
+            color: var(--color-slate-500);
         }
         #spam-checker--aside td:last-child { 
             font-weight: 600;
-            color: var(--color-text);
+            color: var(--color-slate-800);
             text-align: right;
         }
         #spam-checker--aside ul { 
             list-style: none;
-            margin: 0.5rem 0;
-            font-size: 0.875rem;
+            margin: 0.375rem 0;
+            font-size: 0.8125rem;
         }
         #spam-checker--aside li { 
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            color: var(--color-text-muted);
+            color: var(--color-slate-600);
             margin: 0.25rem 0;
         }
         #spam-checker--aside li span { 
             font-weight: 600;
-            color: var(--color-text);
-        }
-        #spam-checker--aside .text-great { 
-            color: var(--color-carrot-orange);
-            font-weight: 700;
-        }
-        #spam-checker--aside .text-okay { 
-            color: var(--color-blue-violet);
-            font-weight: 700;
-        }
-        #spam-checker--aside .text-poor { 
-            color: var(--color-poppy);
-            font-weight: 700;
-        }
-        
-        /* AI Response Styling */
-        .ai-action-btn {
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-            font-weight: 600;
-            border-radius: 0.5rem;
-            transition: var(--transition-fast);
-            border: none;
-            cursor: pointer;
-        }
-        .ai-btn-copy {
-            background: var(--color-platinum);
-            color: var(--color-text);
-        }
-        .ai-btn-copy:hover {
-            background: var(--color-platinum-dark);
-            transform: translateY(-1px);
-        }
-        .ai-btn-apply {
-            background: var(--color-carrot-orange);
-            color: white;
-        }
-        .ai-btn-apply:hover {
-            background: #d17f04;
-            box-shadow: 0 4px 12px rgba(232, 144, 5, 0.4);
-            transform: translateY(-1px);
-        }
-        .ai-btn-use {
-            background: var(--color-blue-violet);
-            color: white;
-        }
-        .ai-btn-use:hover {
-            background: #6d2bc5;
-            box-shadow: 0 4px 12px rgba(131, 56, 236, 0.4);
-            transform: translateY(-1px);
-        }
-        .ai-btn-copy-small {
-            background: var(--color-platinum);
-            color: var(--color-text-muted);
-            padding: 0.375rem 0.75rem;
-            font-size: 0.75rem;
-        }
-        .ai-btn-copy-small:hover {
-            background: var(--color-platinum-dark);
-        }
-        
-        .ai-content-card {
-            background: white;
-            border: 2px solid var(--color-platinum);
-            border-radius: 0.75rem;
-            padding: 1.25rem;
-            font-size: 0.875rem;
-            color: var(--color-text);
-            line-height: 1.7;
-            transition: var(--transition-fast);
-        }
-        .ai-content-card:hover {
-            border-color: var(--color-blue-violet);
-            box-shadow: 0 4px 16px rgba(131, 56, 236, 0.1);
-        }
-        
-        .ai-subject-card {
-            background: white;
-            border: 2px solid var(--color-platinum);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            transition: var(--transition-fast);
-        }
-        .ai-subject-card:hover {
-            border-color: var(--color-carrot-orange);
-            box-shadow: 0 4px 16px rgba(232, 144, 5, 0.15);
-            transform: translateY(-2px);
-        }
-        .ai-subject-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-        }
-        .ai-subject-number {
-            font-weight: 700;
-            color: var(--color-blue-violet);
-            margin-right: 0.5rem;
-            flex-shrink: 0;
-        }
-        .ai-subject-text {
-            flex-grow: 1;
-            color: var(--color-text);
-            font-weight: 600;
-        }
-        .ai-subject-meta {
-            font-size: 0.75rem;
-            color: var(--color-text-muted);
-            flex-shrink: 0;
-            margin-left: 0.5rem;
-        }
-        .ai-subject-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .ai-spam-indicator {
-            margin-left: 0.25rem;
-            font-size: 0.75rem;
-        }
-        
-        .ai-suggestions-content > * + * {
-            margin-top: 0.75rem;
-        }
-        .ai-suggestions-content h4 {
-            font-size: 0.875rem;
-            line-height: 1.25rem;
-            font-weight: 600;
-            color: #1f2937;
-            margin-top: 0.75rem;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-        }
-        .ai-suggestions-content ul {
-            list-style-type: disc;
-            margin-left: 1.5rem;
-        }
-        .ai-suggestions-content ul > * + * {
-            margin-top: 0.5rem;
-        }
-        .ai-suggestions-content li {
-            font-size: 0.875rem;
-            line-height: 1.625;
-            color: #374151;
-        }
-        .ai-suggestions-content strong {
-            font-weight: 600;
-            color: #111827;
-        }
-        .suggestion-section {
-            background-color: white;
-            border: 1px solid #dbeafe;
-            border-radius: 0.5rem;
-            padding: 1rem;
-        }
-        .ai-content-card ul {
-            list-style-type: disc;
-            margin-left: 1.5rem;
-        }
-        .ai-content-card ul > * + * {
-            margin-top: 0.25rem;
-        }
-        .ai-content-card ol {
-            @apply list-decimal ml-6 space-y-1;
-        }
-        
-        /* Animation keyframes */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.7;
-            }
-        }
-        
-        /* Apply animations */
-        .container > div {
-            animation: fadeIn 0.5s ease-out;
-        }
-        
-        /* Enhanced button focus states */
-        button:focus-visible {
-            outline: 2px solid var(--color-blue-violet);
-            outline-offset: 2px;
-        }
-        
-        /* Smooth link hover effects */
-        a:hover {
-            opacity: 0.8;
-        }
-        
-        /* Enhanced card shadows on hover */
-        .bg-white:hover {
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-        }
-        
-        /* Loading spinner */
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        
-        .animate-spin {
-            animation: spin 1s linear infinite;
-        }
-        
-        /* Gradient text animation */
-        @keyframes gradient-shift {
-            0% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-            100% {
-                background-position: 0% 50%;
-            }
-        }
-        
-        /* Enhanced placeholder styling */
-        ::placeholder {
-            color: var(--color-text-muted);
-            opacity: 0.6;
-        }
-        
-        /* Better selection styling */
-        ::selection {
-            background: var(--color-blue-violet);
-            color: white;
-        }
-        
-        /* Smooth page transitions */
-        html {
-            scroll-behavior: smooth;
-        }
-        
-        /* Auto-style links in email preview */
-        #email-preview a {
-            color: #0400ff !important;
-            text-decoration: underline !important;
-        }
-        
-        /* Tone preset buttons */
-        .tone-preset:hover {
-            background: var(--color-carrot-orange) !important;
-            color: white !important;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(232, 144, 5, 0.3);
-        }
-        
-        /* Template list items */
-        .template-item {
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            border: 2px solid var(--color-platinum);
-            background: white;
-            transition: var(--transition-fast);
-            cursor: pointer;
-        }
-        .template-item:hover {
-            border-color: var(--color-blue-violet);
-            background: var(--color-light-bg);
-            transform: translateX(4px);
+            color: var(--color-slate-900);
         }
 
-        /* Dark Mode Simulation for Email Preview */
+        /* Deliverability colors */
+        #spam-checker--aside .text-great { color: var(--color-emerald-600); font-weight: 700; }
+        #spam-checker--aside .text-okay { color: var(--color-amber-500); font-weight: 700; }
+        #spam-checker--aside .text-poor { color: var(--color-rose-600); font-weight: 700; }
+
+        /* Dark Mode Simulation */
         .preview-dark-mode {
-            background-color: #1e293b !important;
-            color: #f1f5f9 !important;
-            border-color: #475569 !important;
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+            border-color: #334155 !important;
         }
         .preview-dark-mode * {
             color: inherit;
@@ -609,608 +202,622 @@
             color: #38bdf8 !important;
         }
         .preview-dark-mode table, .preview-dark-mode td, .preview-dark-mode th {
-            border-color: #475569 !important;
+            border-color: #334155 !important;
         }
+
+        /* Viewport control button active */
         .viewport-btn.active {
-            background: white !important;
-            color: #0f172a !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background: #ffffff !important;
+            color: var(--color-slate-900) !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+
+        /* Tone preset buttons */
+        .tone-preset {
+            background: var(--color-slate-100);
+            color: var(--color-slate-700);
+            border: 1px solid var(--color-slate-200);
+        }
+        .tone-preset:hover {
+            background: var(--color-indigo-50) !important;
+            color: var(--color-indigo-600) !important;
+            border-color: var(--color-indigo-200) !important;
+        }
+
+        /* Email canvas background simulation pattern */
+        .preview-canvas-bg {
+            background-color: #f1f5f9;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 16px 16px;
         }
     </style>
 </head>
-<body class="text-slate-800">
+<body class="text-slate-900 bg-slate-50 antialiased min-h-screen flex flex-col">
 
-    <!-- Modern Header -->
-    <div class="sticky top-0 z-50 backdrop-blur-lg bg-white/80 border-b-2 shadow-sm" style="border-color: var(--color-platinum);">
-        <div class="container mx-auto px-4 md:px-8 py-4">
+    <!-- Global Navigation Header -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-white/90 border-b border-slate-200 shadow-sm">
+        <div class="container mx-auto px-4 md:px-6 py-3 max-w-7xl">
             <div class="flex items-center justify-between">
+                <!-- Brand Logo & Title -->
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, var(--color-blue-violet) 0%, var(--color-carrot-orange) 100%);">
-                        <i class="fas fa-envelope text-white text-lg"></i>
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-600 text-white shadow-sm shadow-indigo-200">
+                        <i class="fas fa-layer-group text-sm"></i>
                     </div>
-                    <h1 class="text-2xl font-bold" style="background: linear-gradient(135deg, var(--color-blue-violet), var(--color-carrot-orange)); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent;">
-                        Email Template Editor
-                    </h1>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-lg tracking-tight text-slate-900">TempEd</span>
+                        <span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-wider">Pro</span>
+                    </div>
                 </div>
+
+                <!-- Global Nav Tabs -->
+                <nav class="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200" aria-label="Main Navigation">
+                    <a href="index.html" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-white text-slate-900 shadow-sm flex items-center gap-1.5" aria-current="page">
+                        <i class="fas fa-code text-indigo-500"></i>
+                        <span>Editor</span>
+                    </a>
+                    <a href="templates.html" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+                        <i class="fas fa-folder text-slate-400"></i>
+                        <span>Templates</span>
+                    </a>
+                    <a href="settings.html" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+                        <i class="fas fa-cog text-slate-400"></i>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+
+                <!-- Quick Action Buttons -->
                 <div class="flex items-center gap-2">
-                    <button id="settings-btn" class="px-4 py-2 rounded-lg font-medium transition-all" style="background: var(--color-platinum); color: var(--color-text);">
-                        <i class="fas fa-cog mr-2"></i>Settings
+                    <button id="help-btn" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all" title="Keyboard Shortcuts (Ctrl+B, Ctrl+S...)" aria-label="Keyboard Shortcuts">
+                        <i class="fas fa-keyboard"></i>
                     </button>
+                    <a href="https://github.com/itsrohanpatel/temped" target="_blank" rel="noopener noreferrer" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all" title="GitHub Repository">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <button id="settings-btn" class="hidden">Settings</button>
                 </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <div class="container mx-auto p-4 md:p-8">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Left Column: Visual Preview -->
-            <div class="bg-white rounded-2xl shadow-xl overflow-hidden" style="border: 2px solid var(--color-platinum);">
-                <div class="p-6">
-                    <!-- Fake Email Client UI -->
-                    <div class="flex items-center space-x-4 pb-4 border-b-2" style="border-color: var(--color-platinum);">
-                        <div class="w-12 h-12 text-white flex items-center justify-center rounded-xl font-bold text-lg shadow-md" style="background: linear-gradient(135deg, var(--color-blue-violet) 0%, var(--color-carrot-orange) 100%);">
-                            <span id="sender-initial">R</span>
-                        </div>
-                        <div>
-                            <p class="font-semibold" style="color: var(--color-text);">Rohan Patel</p>
-                            <p class="text-sm" style="color: var(--color-text-muted);">To: <span id="recipient-email">recipient@example.com</span></p>
-                        </div>
+    <!-- Main Workspace Split Pane -->
+    <main class="container mx-auto px-4 md:px-6 py-6 max-w-7xl flex-grow">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- LEFT COLUMN (5 cols): Compose, Variables, HTML Source & AI Tools -->
+            <div class="lg:col-span-5 flex flex-col space-y-5">
+                
+                <!-- Email Subject & Preheader Card -->
+                <div class="card p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fas fa-envelope-open-text text-indigo-500"></i> Email Meta
+                        </h2>
+                        <span class="text-[11px] text-slate-400 font-medium">Supports {{variables}}</span>
                     </div>
+
                     <!-- Subject Line Input -->
-                    <div class="my-4">
-                        <label class="text-sm font-semibold mb-2 block" style="color: var(--color-text);">Subject Line:</label>
+                    <div class="space-y-1.5 mb-3">
+                        <label for="subject-line-input" class="form-label">Subject Line</label>
                         <input type="text" id="subject-line-input" 
-                               class="w-full p-3 text-white border-2 rounded-xl font-medium text-base transition-all focus:ring-2" 
-                               style="background: var(--color-black); border-color: var(--color-platinum);"
+                               class="form-input font-medium" 
                                placeholder="Enter your email subject line..."
                                value="Regarding AI Roles at {{company_name}}">
-                        <div id="subject-line-preview" class="mt-2 text-sm p-3 rounded-xl border-2" style="color: var(--color-text-muted); background: var(--color-light-bg); border-color: var(--color-platinum);">
-                            <span class="font-semibold" style="color: var(--color-text);">Preview:</span> <span id="subject-preview-text">Regarding AI Roles at {{company_name}}</span>
-                        </div>
                     </div>
-                    
+
                     <!-- Preheader / Preview Text Input -->
-                    <div class="my-4">
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="text-sm font-semibold block" style="color: var(--color-text);">Preview / Preheader Text:</label>
-                            <span class="text-xs text-slate-400">Appears next to subject in mobile & web inboxes</span>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-center">
+                            <label for="preheader-input" class="form-label">Preheader Snippet</label>
+                            <span class="text-[11px] text-slate-400">Inbox preview text</span>
                         </div>
                         <input type="text" id="preheader-input" 
-                               class="w-full p-3 text-white border-2 rounded-xl font-medium text-sm transition-all focus:ring-2" 
-                               style="background: var(--color-black); border-color: var(--color-platinum);"
-                               placeholder="Catchy secondary snippet (e.g., Don't miss our engineering leadership keynote)...">
-                    </div>
-                    
-                    <!-- Toolbar -->
-                    <div class="py-4 border-t-2" style="border-color: var(--color-platinum);">
-                        <div id="toolbar" class="flex flex-wrap items-center gap-2 p-3 rounded-xl border-2" role="toolbar" aria-label="Text formatting toolbar" style="background: var(--color-light-bg); border-color: var(--color-platinum);">
-                            <button class="toolbar-btn" data-command="bold" aria-label="Bold text (Ctrl+B)" title="Bold"><i class="fas fa-bold"></i></button>
-                            <button class="toolbar-btn" data-command="italic" aria-label="Italic text (Ctrl+I)" title="Italic"><i class="fas fa-italic"></i></button>
-                            <button class="toolbar-btn" data-command="underline" aria-label="Underline text (Ctrl+U)" title="Underline"><i class="fas fa-underline"></i></button>
-                            <button class="toolbar-btn" data-command="strikeThrough" aria-label="Strikethrough text" title="Strikethrough"><i class="fas fa-strikethrough"></i></button>
-                            <button class="toolbar-btn" data-command="createLink" aria-label="Insert link" title="Insert Link"><i class="fas fa-link"></i></button>
-                            <div class="h-6 border-l-2" style="border-color: var(--color-platinum);"></div>
-                            <button class="toolbar-btn" data-command="justifyLeft" aria-label="Align left" title="Align Left"><i class="fas fa-align-left"></i></button>
-                            <button class="toolbar-btn" data-command="justifyCenter" aria-label="Align center" title="Align Center"><i class="fas fa-align-center"></i></button>
-                            <button class="toolbar-btn" data-command="justifyRight" aria-label="Align right" title="Align Right"><i class="fas fa-align-right"></i></button>
-                            <div class="h-6 border-l-2" style="border-color: var(--color-platinum);"></div>
-                            <button class="toolbar-btn" data-command="insertOrderedList" aria-label="Numbered list" title="Numbered List"><i class="fas fa-list-ol"></i></button>
-                            <button class="toolbar-btn" data-command="insertUnorderedList" aria-label="Bullet list" title="Bullet List"><i class="fas fa-list-ul"></i></button>
-                            <div class="h-6 border-l-2" style="border-color: var(--color-platinum);"></div>
-                            <select class="toolbar-select" data-command="fontName">
-                                <option value="Arial">Arial</option> <option value="Verdana">Verdana</option> <option value="Georgia">Georgia</option> <option value="Times New Roman">Times</option> <option value="Courier New">Courier</option>
-                            </select>
-                            <select class="toolbar-select" data-command="fontSize">
-                                <option value="1">Small</option> <option value="3" selected>Normal</option> <option value="5">Large</option> <option value="7">Huge</option>
-                            </select>
-                            <div class="h-6 border-l-2" style="border-color: var(--color-platinum);"></div>
-                            <div class="flex items-center rounded-lg" style="background: var(--color-platinum);">
-                                <span class="px-3" style="color: var(--color-text);"><i class="fas fa-palette"></i></span>
-                                <input type="color" class="w-8 h-8 bg-transparent border-l-2 cursor-pointer" style="border-color: var(--color-platinum-dark);" data-command="foreColor" value="#000000" title="Text Color">
-                            </div>
-                            <div class="h-6 border-l-2" style="border-color: var(--color-platinum);"></div>
-                            <button class="toolbar-btn" data-command="removeFormat" aria-label="Clear formatting" title="Clear Formatting (Fixes pasted content)"><i class="fas fa-eraser"></i></button>
-                            <div class="h-6 border-l-2" style="border-color: var(--color-platinum);"></div>
-                            <button id="undo-btn" class="toolbar-btn" aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)"><i class="fas fa-undo"></i></button>
-                            <button id="redo-btn" class="toolbar-btn" aria-label="Redo (Ctrl+Y)" title="Redo (Ctrl+Y)"><i class="fas fa-redo"></i></button>
-                            <div class="h-6 border-l-2" style="border-color: var(--color-platinum);"></div>
-                            <button id="help-btn" class="toolbar-btn" aria-label="Show keyboard shortcuts" title="Keyboard Shortcuts"><i class="fas fa-question-circle"></i></button>
-                        </div>
-                    </div>
-                    <!-- Preview Modes & Device Viewport Toolbar -->
-                    <div class="flex flex-wrap items-center justify-between pb-3 pt-2 gap-2">
-                        <!-- Viewport Buttons -->
-                        <div class="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200" role="group" aria-label="Device preview viewport">
-                            <button id="viewport-desktop" class="viewport-btn active px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-800" title="Desktop View (600px)">
-                                <i class="fas fa-desktop mr-1.5"></i>Desktop
-                            </button>
-                            <button id="viewport-tablet" class="viewport-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-600 hover:text-slate-900" title="Tablet View (768px)">
-                                <i class="fas fa-tablet-alt mr-1.5"></i>Tablet
-                            </button>
-                            <button id="viewport-mobile" class="viewport-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-600 hover:text-slate-900" title="Mobile View (375px)">
-                                <i class="fas fa-mobile-alt mr-1.5"></i>Mobile
-                            </button>
-                        </div>
-
-                        <!-- Dark Mode Toggle & Health Score Badge -->
-                        <div class="flex items-center space-x-2">
-                            <button id="preview-dark-toggle" class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all text-slate-700 flex items-center shadow-sm" title="Toggle Dark Mode Simulation">
-                                <i class="fas fa-moon mr-1.5 text-indigo-500"></i>Dark Mode
-                            </button>
-                            <button id="health-score-badge" class="px-3 py-1.5 text-xs font-bold rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all flex items-center shadow-sm cursor-pointer" title="Deliverability Health Score - Click for diagnostic report">
-                                <i class="fas fa-shield-alt mr-1.5"></i><span id="health-score-val">100/100</span>&nbsp;<span id="health-score-grade">Great</span>
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Email Body -->
-                    <div id="email-preview" contenteditable="true" class="prose prose-sm max-w-none leading-relaxed p-5 border-2 rounded-xl transition-all" style="min-height: 300px; color: var(--color-text); border-color: var(--color-platinum); background: white;">
-                        <!-- Rendered HTML will go here -->
+                               class="form-input text-xs" 
+                               placeholder="Catchy secondary snippet (e.g., Don't miss our leadership keynote)...">
                     </div>
                 </div>
-            </div>
 
-            <!-- Right Column: Input & Controls -->
-            <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col space-y-6" style="border: 2px solid var(--color-platinum);">
-                <div>
-                    <h2 class="text-xl font-semibold mb-4 text-slate-900">Define Template Variables</h2>
-                    <div id="variables-container" class="space-y-3">
+                <!-- Template Variables Drawer -->
+                <div class="card p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fas fa-sliders-h text-indigo-500"></i> Template Variables
+                        </h2>
+                        <button id="auto-detect-vars-btn" class="text-xs font-semibold px-2.5 py-1 rounded-md text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all flex items-center gap-1 shadow-sm" title="Scan template text and subject for {{variables}}">
+                            <i class="fas fa-magic text-emerald-600"></i> Auto-Detect
+                        </button>
+                    </div>
+
+                    <div id="variables-container" class="space-y-2 mb-3">
                         <!-- Dynamic variables will be injected here -->
                     </div>
-                    <div class="flex flex-wrap gap-2 mt-3">
-                        <button id="auto-detect-vars-btn" class="text-sm font-semibold transition-all px-3 py-1.5 rounded-lg text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 shadow-sm" title="Scan template text and subject for {{variables}}">
-                            <i class="fas fa-magic mr-1"></i> Auto-Detect Variables
+
+                    <!-- Variable Action Pills -->
+                    <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
+                        <button id="add-variable-btn" class="btn btn-secondary text-xs px-2.5 py-1.5 text-indigo-600 border-indigo-100 bg-indigo-50/50 hover:bg-indigo-50">
+                            <i class="fas fa-plus mr-1"></i> Add Variable
                         </button>
-                        <button id="add-variable-btn" class="text-sm font-semibold transition-all px-3 py-1.5 rounded-lg" style="color: var(--color-blue-violet);">
-                            <i class="fas fa-plus-circle mr-1"></i> Add Variable
+                        <button id="save-template-btn" class="btn btn-secondary text-xs px-2.5 py-1.5 text-slate-700">
+                            <i class="fas fa-save mr-1 text-emerald-600"></i> Save
                         </button>
-                        <button id="save-template-btn" class="text-sm font-semibold transition-all px-3 py-1.5 rounded-lg" style="color: var(--color-carrot-orange);">
-                            <i class="fas fa-save mr-1"></i> Save Template
+                        <button id="load-template-btn" class="btn btn-secondary text-xs px-2.5 py-1.5 text-slate-700">
+                            <i class="fas fa-folder-open mr-1 text-indigo-500"></i> Load
                         </button>
-                        <button id="load-template-btn" class="text-sm font-semibold transition-all px-3 py-1.5 rounded-lg" style="color: var(--color-blue-violet);">
-                            <i class="fas fa-folder-open mr-1"></i> Load Template
-                        </button>
-                        <a href="templates.html" id="manage-templates-btn" class="text-sm font-semibold transition-all px-3 py-1.5 rounded-lg" style="color: var(--color-blue-violet);">
-                            <i class="fas fa-database mr-1"></i> Templates Library
+                        <a href="templates.html" id="manage-templates-btn" class="btn btn-secondary text-xs px-2.5 py-1.5 text-slate-700">
+                            <i class="fas fa-database mr-1 text-slate-500"></i> Library
                         </a>
-                        <button id="clear-all-btn" class="text-sm font-semibold transition-all px-3 py-1.5 rounded-lg" style="color: var(--color-poppy);">
-                            <i class="fas fa-trash mr-1"></i> Clear All
+                        <button id="clear-all-btn" class="btn btn-ghost text-xs px-2 py-1.5 text-rose-600 hover:bg-rose-50 ml-auto">
+                            <i class="fas fa-trash mr-1"></i> Clear
                         </button>
                     </div>
                 </div>
 
-                <div class="flex flex-col flex-grow">
-                    <h2 class="text-xl font-semibold mb-4" style="color: var(--color-text);">Edit Email HTML & Check Spam Score</h2>
-                    <div class="relative flex-grow h-full rounded-xl border-2 focus-within:ring-2 transition-all" style="background: var(--color-black); border-color: var(--color-platinum);">
-                        <textarea id="spam-checker--textarea" class="w-full h-full p-4 font-mono text-sm custom-scrollbar" style="min-height: 400px; background: transparent; color: var(--color-platinum);"></textarea>
-                        <div class="absolute top-3 right-3 flex items-center space-x-1.5 z-10">
-                            <button id="copy-subject-btn" class="text-white text-xs font-semibold py-1.5 px-2.5 rounded-lg transition-all hover:bg-slate-700 bg-slate-800 shadow" title="Copy Rendered Subject Line">
-                                <i class="fas fa-heading mr-1"></i>Subject
-                            </button>
-                            <button id="copy-text-btn" class="text-white text-xs font-semibold py-1.5 px-2.5 rounded-lg transition-all hover:bg-slate-700 bg-slate-800 shadow" title="Copy Plain Text">
-                                <i class="fas fa-file-alt mr-1"></i>Plain Text
-                            </button>
-                            <button id="copy-html-btn" class="text-white text-xs font-semibold py-1.5 px-3 rounded-lg transition-all hover:transform hover:-translate-y-0.5 shadow" style="background: var(--color-blue-violet);" title="Copy HTML with Preheader">
-                                <i class="fas fa-copy mr-1"></i>Copy HTML
+                <!-- HTML Source Editor & Spam Analyzer -->
+                <div class="card p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fas fa-code text-indigo-500"></i> Email HTML Source
+                        </h2>
+                        <span class="text-[11px] text-slate-400 font-medium">Real-time spam analyzer</span>
+                    </div>
+
+                    <!-- Text Formatting Toolbar -->
+                    <div id="toolbar" class="flex flex-wrap items-center gap-1 p-1.5 rounded-lg bg-slate-100 border border-slate-200 mb-3" role="toolbar" aria-label="Text formatting toolbar">
+                        <button class="toolbar-btn" data-command="bold" aria-label="Bold text" title="Bold (Ctrl+B)"><i class="fas fa-bold"></i></button>
+                        <button class="toolbar-btn" data-command="italic" aria-label="Italic text" title="Italic (Ctrl+I)"><i class="fas fa-italic"></i></button>
+                        <button class="toolbar-btn" data-command="underline" aria-label="Underline text" title="Underline (Ctrl+U)"><i class="fas fa-underline"></i></button>
+                        <button class="toolbar-btn" data-command="strikeThrough" aria-label="Strikethrough text" title="Strikethrough"><i class="fas fa-strikethrough"></i></button>
+                        <button class="toolbar-btn" data-command="createLink" aria-label="Insert link" title="Insert Link"><i class="fas fa-link"></i></button>
+                        <div class="h-4 border-l border-slate-300 mx-0.5"></div>
+                        <button class="toolbar-btn" data-command="justifyLeft" aria-label="Align left" title="Align Left"><i class="fas fa-align-left"></i></button>
+                        <button class="toolbar-btn" data-command="justifyCenter" aria-label="Align center" title="Align Center"><i class="fas fa-align-center"></i></button>
+                        <button class="toolbar-btn" data-command="justifyRight" aria-label="Align right" title="Align Right"><i class="fas fa-align-right"></i></button>
+                        <div class="h-4 border-l border-slate-300 mx-0.5"></div>
+                        <button class="toolbar-btn" data-command="insertOrderedList" aria-label="Numbered list" title="Numbered List"><i class="fas fa-list-ol"></i></button>
+                        <button class="toolbar-btn" data-command="insertUnorderedList" aria-label="Bullet list" title="Bullet List"><i class="fas fa-list-ul"></i></button>
+                        <div class="h-4 border-l border-slate-300 mx-0.5"></div>
+                        <select class="toolbar-select" data-command="fontName" title="Font Family">
+                            <option value="Arial">Arial</option> <option value="Verdana">Verdana</option> <option value="Georgia">Georgia</option> <option value="Times New Roman">Times</option> <option value="Courier New">Courier</option>
+                        </select>
+                        <select class="toolbar-select" data-command="fontSize" title="Font Size">
+                            <option value="1">Small</option> <option value="3" selected>Normal</option> <option value="5">Large</option> <option value="7">Huge</option>
+                        </select>
+                        <div class="h-4 border-l border-slate-300 mx-0.5"></div>
+                        <div class="flex items-center rounded bg-slate-200 px-1" title="Text Color">
+                            <input type="color" class="w-5 h-5 bg-transparent cursor-pointer border-0 p-0" data-command="foreColor" value="#000000">
+                        </div>
+                        <div class="h-4 border-l border-slate-300 mx-0.5"></div>
+                        <button class="toolbar-btn" data-command="removeFormat" aria-label="Clear formatting" title="Clear Formatting"><i class="fas fa-eraser"></i></button>
+                        <button id="undo-btn" class="toolbar-btn" aria-label="Undo" title="Undo (Ctrl+Z)"><i class="fas fa-undo"></i></button>
+                        <button id="redo-btn" class="toolbar-btn" aria-label="Redo" title="Redo (Ctrl+Y)"><i class="fas fa-redo"></i></button>
+                    </div>
+
+                    <!-- Code Container with Action Buttons Header -->
+                    <div class="rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-md">
+                        <div class="flex items-center justify-between px-3 py-2 bg-slate-950/80 border-b border-slate-800">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-800 text-slate-300 mono uppercase tracking-wider">HTML</span>
+                            </div>
+                            <div class="flex items-center space-x-1.5">
+                                <button id="copy-subject-btn" class="text-slate-300 hover:text-white text-[11px] font-semibold py-1 px-2.5 rounded bg-slate-800 hover:bg-slate-700 transition-all border border-slate-700" title="Copy Rendered Subject Line">
+                                    <i class="fas fa-heading mr-1"></i>Subject
+                                </button>
+                                <button id="copy-text-btn" class="text-slate-300 hover:text-white text-[11px] font-semibold py-1 px-2.5 rounded bg-slate-800 hover:bg-slate-700 transition-all border border-slate-700" title="Copy Plain Text">
+                                    <i class="fas fa-file-alt mr-1"></i>Text
+                                </button>
+                                <button id="copy-html-btn" class="text-white text-[11px] font-semibold py-1 px-3 rounded bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm" title="Copy HTML with Preheader">
+                                    <i class="fas fa-copy mr-1"></i>Copy HTML
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Textarea -->
+                        <div class="relative min-h-[380px]">
+                            <textarea id="spam-checker--textarea" class="w-full h-full p-4 font-mono text-xs custom-scrollbar leading-relaxed bg-transparent text-slate-200 resize-y" style="min-height: 380px;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Spam Diagnostics Readout -->
+                    <div id="spam-checker--aside" class="mt-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 text-xs">
+                        <i class="text-slate-400">Add content to get your spam score.</i>
+                    </div>
+                </div>
+
+                <!-- AI Copilot Card -->
+                <div class="card p-5 border-indigo-100 bg-gradient-to-b from-indigo-50/40 via-white to-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xs font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fas fa-wand-magic-sparkles text-indigo-600"></i> Gemini AI Copilot
+                        </h2>
+                        <div id="ai-request-limiter" class="text-xs flex items-center gap-1.5">
+                            <span class="text-slate-500">Today:</span>
+                            <span id="ai-request-count" class="font-bold text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">0</span>
+                            <button id="reset-request-count" class="text-[10px] rounded p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100" title="Reset Count">
+                                <i class="fas fa-sync-alt"></i>
                             </button>
                         </div>
                     </div>
-                    <div id="spam-checker--aside" class="mt-4 p-4 rounded-xl border-2" style="background: white; border-color: var(--color-platinum);">
-                        <i style="color: var(--color-text-muted);">Add content to get your spam score.</i>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <button id="ai-optimize-btn" class="btn btn-secondary text-xs py-2 px-2.5 font-semibold text-slate-800 hover:border-indigo-300 flex items-center justify-center gap-1.5">
+                            <i class="fas fa-bolt text-indigo-500"></i> Optimize
+                        </button>
+                        <button id="ai-suggest-btn" class="btn btn-secondary text-xs py-2 px-2.5 font-semibold text-slate-800 hover:border-indigo-300 flex items-center justify-center gap-1.5">
+                            <i class="fas fa-lightbulb text-amber-500"></i> Suggestions
+                        </button>
+                        <button id="ai-tone-btn" class="btn btn-secondary text-xs py-2 px-2.5 font-semibold text-slate-800 hover:border-indigo-300 flex items-center justify-center gap-1.5">
+                            <i class="fas fa-palette text-indigo-500"></i> Adjust Tone
+                        </button>
+                        <button id="ai-subject-btn" class="btn btn-secondary text-xs py-2 px-2.5 font-semibold text-slate-800 hover:border-indigo-300 flex items-center justify-center gap-1.5">
+                            <i class="fas fa-heading text-indigo-500"></i> Subject Line
+                        </button>
+                        <button id="ai-rewrite-spam-btn" class="btn btn-secondary text-xs py-2 px-2.5 font-semibold text-rose-700 bg-rose-50/50 hover:bg-rose-50 border-rose-200 col-span-2 sm:col-span-2 flex items-center justify-center gap-1.5">
+                            <i class="fas fa-broom text-rose-500"></i> Rewrite Spam Words
+                        </button>
                     </div>
+
+                    <!-- AI Loading Indicator -->
+                    <div id="ai-loading" class="hidden mt-3 p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+                        <div class="flex items-center justify-center gap-2.5 text-xs font-semibold text-indigo-700">
+                            <div class="animate-spin rounded-full h-4 w-4 border-2 border-indigo-600 border-t-transparent"></div>
+                            <span>Gemini AI is crafting suggestions...</span>
+                        </div>
+                    </div>
+
+                    <!-- AI Response Area -->
+                    <div id="ai-response" class="hidden mt-3 p-3.5 bg-white rounded-xl border border-indigo-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-100">
+                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">AI Suggestion</h4>
+                            <button id="copy-ai-response" class="text-slate-400 hover:text-slate-700 text-xs p-1" title="Copy response">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div id="ai-content" class="text-xs text-slate-700 leading-relaxed max-h-60 overflow-y-auto custom-scrollbar"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN (7 cols): Live Email Client Canvas Frame -->
+            <div class="lg:col-span-7 sticky top-20">
+                <div class="window-chrome">
                     
-                    <!-- AI Enhancement Panel -->
-                    <div class="mt-6 p-5 rounded-xl border-2 shadow-lg transition-all" style="background: linear-gradient(135deg, #f5f0ff 0%, white 100%); border-color: var(--color-blue-violet);">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-semibold flex items-center" style="color: var(--color-text);">
-                                <i class="fas fa-magic mr-2" style="color: var(--color-blue-violet);"></i>AI-Powered Enhancements
-                            </h3>
-                            <div id="ai-request-limiter" class="text-sm flex items-center gap-2">
-                                <span style="color: var(--color-text-muted);">Today's AI Requests:</span>
-                                <span id="ai-request-count" class="font-bold text-base px-2 py-1 rounded-lg" style="color: var(--color-blue-violet); background: var(--color-light-bg); border: 1px solid var(--color-platinum);">0</span>
-                                <button id="reset-request-count" class="text-xs rounded-lg transition-all hover:bg-slate-300" title="Reset Count" style="background: var(--color-platinum); color: var(--color-text-muted); width: 1.75rem; height: 1.75rem; display: inline-flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-sync-alt"></i>
+                    <!-- Window Top Chrome Header -->
+                    <div class="window-header">
+                        <!-- macOS Traffic Lights -->
+                        <div class="traffic-dots">
+                            <span class="traffic-dot red"></span>
+                            <span class="traffic-dot yellow"></span>
+                            <span class="traffic-dot green"></span>
+                        </div>
+
+                        <!-- Simulated Client Recipient Pill -->
+                        <div class="hidden sm:flex items-center gap-2 text-xs text-slate-600 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-xs">
+                            <div class="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
+                                <span id="sender-initial">R</span>
+                            </div>
+                            <span class="font-medium text-slate-700">Rohan</span>
+                            <span class="text-slate-300">|</span>
+                            <span class="text-slate-500 font-mono text-[11px]" id="recipient-email">recipient@example.com</span>
+                        </div>
+
+                        <!-- Viewport Controls & Deliverability Badge -->
+                        <div class="flex items-center gap-2">
+                            <!-- Viewport Switcher -->
+                            <div class="flex items-center bg-slate-200/80 p-0.5 rounded-lg text-xs" role="group" aria-label="Device preview viewport">
+                                <button id="viewport-desktop" class="viewport-btn active px-2.5 py-1 text-xs font-semibold rounded-md transition-all text-slate-900" title="Desktop View (600px)">
+                                    <i class="fas fa-desktop mr-1"></i>Desktop
+                                </button>
+                                <button id="viewport-tablet" class="viewport-btn px-2.5 py-1 text-xs font-semibold rounded-md transition-all text-slate-600 hover:text-slate-900" title="Tablet View (768px)">
+                                    <i class="fas fa-tablet-alt mr-1"></i>Tablet
+                                </button>
+                                <button id="viewport-mobile" class="viewport-btn px-2.5 py-1 text-xs font-semibold rounded-md transition-all text-slate-600 hover:text-slate-900" title="Mobile View (375px)">
+                                    <i class="fas fa-mobile-alt mr-1"></i>Mobile
                                 </button>
                             </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <button id="ai-optimize-btn" class="text-white px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center hover:shadow-lg hover:-translate-y-0.5" style="background: var(--color-blue-violet);">
-                                <i class="fas fa-wand-magic-sparkles mr-2"></i>Optimize Content
+
+                            <!-- Dark Mode Toggle -->
+                            <button id="preview-dark-toggle" class="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs shadow-xs" title="Toggle Dark Mode Simulation">
+                                <i class="fas fa-moon text-indigo-500"></i>
                             </button>
-                            <button id="ai-suggest-btn" class="text-white px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center hover:shadow-lg hover:-translate-y-0.5" style="background: var(--color-blue-violet);">
-                                <i class="fas fa-lightbulb mr-2"></i>Get Suggestions
-                            </button>
-                            <button id="ai-tone-btn" class="text-white px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center hover:shadow-lg hover:-translate-y-0.5" style="background: var(--color-carrot-orange);">
-                                <i class="fas fa-palette mr-2"></i>Adjust Tone
-                            </button>
-                            <button id="ai-subject-btn" class="text-white px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center hover:shadow-lg hover:-translate-y-0.5" style="background: var(--color-carrot-orange);">
-                                <i class="fas fa-heading mr-2"></i>Generate Subject
-                            </button>
-                            <button id="ai-rewrite-spam-btn" class="text-white px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center hover:shadow-lg hover:-translate-y-0.5" style="background: var(--color-poppy);">
-                                <i class="fas fa-broom mr-2"></i>Rewrite Spam Words
+
+                            <!-- Deliverability Health Score Badge -->
+                            <button id="health-score-badge" class="px-2.5 py-1 text-xs font-bold rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all flex items-center gap-1 shadow-xs cursor-pointer" title="Deliverability Health Score - Click for diagnostics">
+                                <i class="fas fa-shield-alt text-emerald-600"></i>
+                                <span id="health-score-val">100/100</span>
+                                <span id="health-score-grade" class="hidden sm:inline">Great</span>
                             </button>
                         </div>
-                        <div id="ai-loading" class="hidden mt-4 p-4 rounded-xl" style="background: rgba(131, 56, 236, 0.1); border: 2px solid var(--color-blue-violet);">
-                            <div class="flex items-center">
-                                <div class="animate-spin rounded-full h-5 w-5 border-b-2 mr-3" style="border-color: var(--color-blue-violet);"></div>
-                                <span class="text-sm font-medium" style="color: var(--color-blue-violet);">AI is working...</span>
+                    </div>
+
+                    <!-- Client Email Subject Bar -->
+                    <div id="subject-line-preview" class="px-4 py-2.5 bg-slate-50/80 border-b border-slate-200 text-xs flex items-center gap-2">
+                        <span class="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Subject:</span>
+                        <span id="subject-preview-text" class="font-semibold text-slate-900 truncate">Regarding AI Roles at {{company_name}}</span>
+                    </div>
+
+                    <!-- Live Email Preview Canvas Body -->
+                    <div class="preview-canvas-bg p-4 md:p-6 overflow-x-auto min-h-[520px] flex justify-center items-start">
+                        <div id="email-preview-container" class="w-full transition-all duration-200" style="max-width: 600px;">
+                            <div id="email-preview" contenteditable="true" class="bg-white rounded-xl p-6 shadow-sm border border-slate-200/80 prose prose-sm max-w-none leading-relaxed transition-all min-h-[460px] focus:ring-0">
+                                <!-- Rendered HTML will go here -->
                             </div>
                         </div>
-                        <div id="ai-response" class="hidden mt-4 p-4 bg-white rounded-xl border-2" style="border-color: var(--color-blue-violet);">
-                            <div class="flex justify-between items-start mb-3">
-                                <h4 class="font-semibold" style="color: var(--color-text);">AI Response</h4>
-                                <button id="copy-ai-response" class="transition-colors" style="color: var(--color-text-muted);">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            </div>
-                            <div id="ai-content" class="text-sm" style="color: var(--color-text);"></div>
-                        </div>
                     </div>
                 </div>
             </div>
+
         </div>
+    </main>
+
+    <!-- Copy Feedback Toast -->
+    <div id="copy-feedback" class="fixed bottom-16 right-5 text-white py-2.5 px-4 rounded-xl shadow-xl transition-all duration-300 opacity-0 pointer-events-none font-semibold text-xs flex items-center gap-2 z-50 bg-emerald-600">
+        <i class="fas fa-check-circle"></i>
+        <span>Copied to clipboard!</span>
     </div>
 
-    <!-- Copy to clipboard feedback message -->
-    <div id="copy-feedback" class="fixed bottom-20 right-5 text-white py-3 px-6 rounded-xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none font-semibold" style="background: var(--color-carrot-orange);">
-        <i class="fas fa-check-circle mr-2"></i>Copied to clipboard!
-    </div>
+    <!-- Modals -->
 
-    <!-- Custom Link Modal -->
-    <div id="link-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="link-modal-title">
-        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 transform transition-all" style="border-color: var(--color-blue-violet);">
-            <div class="mb-6">
-                <div class="flex items-center mb-2">
-                    <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-3" style="background: linear-gradient(135deg, var(--color-blue-violet), var(--color-carrot-orange));">
-                        <i class="fas fa-link text-white"></i>
+    <!-- Insert Link Modal -->
+    <div id="link-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="link-modal-title">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl border border-slate-200 transform transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-50 text-indigo-600">
+                        <i class="fas fa-link"></i>
                     </div>
-                    <h2 id="link-modal-title" class="text-2xl font-bold" style="color: var(--color-text);">Insert Link</h2>
+                    <h2 id="link-modal-title" class="text-base font-bold text-slate-900">Insert Link</h2>
                 </div>
-                <p class="text-sm" style="color: var(--color-text-muted);">Enter the URL you want to link to</p>
             </div>
             
-            <div class="space-y-4">
+            <div class="space-y-3">
                 <div>
-                    <label for="link-url-input" class="block text-sm font-semibold mb-2" style="color: var(--color-text);">
-                        <i class="fas fa-globe mr-1" style="color: var(--color-blue-violet);"></i>URL
-                    </label>
-                    <input 
-                        type="url" 
-                        id="link-url-input" 
-                        class="input-field" 
-                        placeholder="https://example.com"
-                        style="border-color: var(--color-platinum);"
-                    >
+                    <label for="link-url-input" class="form-label">URL Destination</label>
+                    <input type="url" id="link-url-input" class="form-input" placeholder="https://example.com">
                 </div>
-                
                 <div>
-                    <label for="link-text-input" class="block text-sm font-semibold mb-2" style="color: var(--color-text);">
-                        <i class="fas fa-text-width mr-1" style="color: var(--color-blue-violet);"></i>Link Text (optional)
-                    </label>
-                    <input 
-                        type="text" 
-                        id="link-text-input" 
-                        class="input-field" 
-                        placeholder="Enter link text"
-                        style="border-color: var(--color-platinum);"
-                    >
+                    <label for="link-text-input" class="form-label">Display Text (optional)</label>
+                    <input type="text" id="link-text-input" class="form-input" placeholder="Click here">
                 </div>
             </div>
             
-            <div class="flex gap-3 mt-6">
-                <button id="cancel-link-btn" class="flex-1 px-6 py-3 rounded-xl font-semibold transition-all hover:shadow-md" style="background: var(--color-platinum); color: var(--color-text);">
-                    <i class="fas fa-times mr-2"></i>Cancel
-                </button>
-                <button id="insert-link-btn" class="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5" style="background: var(--color-blue-violet);">
-                    <i class="fas fa-check mr-2"></i>Insert Link
-                </button>
+            <div class="flex gap-2 mt-5">
+                <button id="cancel-link-btn" class="flex-1 btn btn-secondary text-xs py-2">Cancel</button>
+                <button id="insert-link-btn" class="flex-1 btn btn-primary text-xs py-2">Insert Link</button>
             </div>
         </div>
     </div>
 
-    <!-- Custom Tone Modal -->
-    <div id="tone-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="tone-modal-title">
-        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 transform transition-all" style="border-color: var(--color-carrot-orange);">
-            <div class="mb-6">
-                <div class="flex items-center mb-2">
-                    <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-3" style="background: linear-gradient(135deg, var(--color-carrot-orange), var(--color-blue-violet));">
-                        <i class="fas fa-palette text-white"></i>
-                    </div>
-                    <h2 id="tone-modal-title" class="text-2xl font-bold" style="color: var(--color-text);">Adjust Tone</h2>
+    <!-- Tone Adjustment Modal -->
+    <div id="tone-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="tone-modal-title">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl border border-slate-200 transform transition-all">
+            <div class="flex items-center gap-2.5 mb-4">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-50 text-indigo-600">
+                    <i class="fas fa-palette"></i>
                 </div>
-                <p class="text-sm" style="color: var(--color-text-muted);">Choose the tone style for your email content</p>
+                <h2 id="tone-modal-title" class="text-base font-bold text-slate-900">Adjust Tone</h2>
             </div>
             
             <div>
-                <label for="tone-input" class="block text-sm font-semibold mb-2" style="color: var(--color-text);">
-                    <i class="fas fa-wand-magic-sparkles mr-1" style="color: var(--color-carrot-orange);"></i>Tone Style
-                </label>
-                <input 
-                    type="text" 
-                    id="tone-input" 
-                    class="input-field" 
-                    placeholder="e.g., professional, friendly, urgent, casual"
-                    style="border-color: var(--color-platinum);"
-                >
-                <div class="mt-3 flex flex-wrap gap-2">
-                    <button class="tone-preset px-3 py-1.5 rounded-lg text-sm font-medium transition-all" style="background: var(--color-platinum); color: var(--color-text);" data-tone="professional">Professional</button>
-                    <button class="tone-preset px-3 py-1.5 rounded-lg text-sm font-medium transition-all" style="background: var(--color-platinum); color: var(--color-text);" data-tone="friendly">Friendly</button>
-                    <button class="tone-preset px-3 py-1.5 rounded-lg text-sm font-medium transition-all" style="background: var(--color-platinum); color: var(--color-text);" data-tone="urgent">Urgent</button>
-                    <button class="tone-preset px-3 py-1.5 rounded-lg text-sm font-medium transition-all" style="background: var(--color-platinum); color: var(--color-text);" data-tone="casual">Casual</button>
+                <label for="tone-input" class="form-label">Desired Tone</label>
+                <input type="text" id="tone-input" class="form-input" placeholder="e.g., professional, friendly, urgent, casual">
+                <div class="mt-2.5 flex flex-wrap gap-1.5">
+                    <button class="tone-preset px-2.5 py-1 rounded-md text-xs font-medium" data-tone="professional">Professional</button>
+                    <button class="tone-preset px-2.5 py-1 rounded-md text-xs font-medium" data-tone="friendly">Friendly</button>
+                    <button class="tone-preset px-2.5 py-1 rounded-md text-xs font-medium" data-tone="urgent">Urgent</button>
+                    <button class="tone-preset px-2.5 py-1 rounded-md text-xs font-medium" data-tone="casual">Casual</button>
                 </div>
             </div>
             
-            <div class="flex gap-3 mt-6">
-                <button id="cancel-tone-btn" class="flex-1 px-6 py-3 rounded-xl font-semibold transition-all hover:shadow-md" style="background: var(--color-platinum); color: var(--color-text);">
-                    <i class="fas fa-times mr-2"></i>Cancel
-                </button>
-                <button id="apply-tone-btn" class="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5" style="background: var(--color-carrot-orange);">
-                    <i class="fas fa-check mr-2"></i>Apply Tone
-                </button>
+            <div class="flex gap-2 mt-5">
+                <button id="cancel-tone-btn" class="flex-1 btn btn-secondary text-xs py-2">Cancel</button>
+                <button id="apply-tone-btn" class="flex-1 btn btn-primary text-xs py-2">Apply Tone</button>
             </div>
         </div>
     </div>
 
-    <!-- Custom Save Template Modal -->
-    <div id="save-template-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="save-template-modal-title">
-        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 transform transition-all" style="border-color: var(--color-carrot-orange);">
-            <div class="mb-6">
-                <div class="flex items-center mb-2">
-                    <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-3" style="background: linear-gradient(135deg, var(--color-carrot-orange), var(--color-blue-violet));">
-                        <i class="fas fa-save text-white"></i>
-                    </div>
-                    <h2 id="save-template-modal-title" class="text-2xl font-bold" style="color: var(--color-text);">Save Template</h2>
+    <!-- Save Template Modal -->
+    <div id="save-template-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="save-template-modal-title">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl border border-slate-200 transform transition-all">
+            <div class="flex items-center gap-2.5 mb-4">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-600">
+                    <i class="fas fa-save"></i>
                 </div>
-                <p class="text-sm" style="color: var(--color-text-muted);">Give your template a memorable name</p>
+                <h2 id="save-template-modal-title" class="text-base font-bold text-slate-900">Save Template</h2>
             </div>
             
             <div>
-                <label for="template-name-input" class="block text-sm font-semibold mb-2" style="color: var(--color-text);">
-                    <i class="fas fa-tag mr-1" style="color: var(--color-carrot-orange);"></i>Template Name
-                </label>
-                <input 
-                    type="text" 
-                    id="template-name-input" 
-                    class="input-field" 
-                    placeholder="e.g., Welcome Email, Follow-up Template"
-                    style="border-color: var(--color-platinum);"
-                >
+                <label for="template-name-input" class="form-label">Template Name</label>
+                <input type="text" id="template-name-input" class="form-input" placeholder="e.g., Q3 Follow-up, Product Launch">
             </div>
             
-            <div class="flex gap-3 mt-6">
-                <button id="cancel-save-template-btn" class="flex-1 px-6 py-3 rounded-xl font-semibold transition-all hover:shadow-md" style="background: var(--color-platinum); color: var(--color-text);">
-                    <i class="fas fa-times mr-2"></i>Cancel
-                </button>
-                <button id="confirm-save-template-btn" class="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5" style="background: var(--color-carrot-orange);">
-                    <i class="fas fa-check mr-2"></i>Save Template
-                </button>
+            <div class="flex gap-2 mt-5">
+                <button id="cancel-save-template-btn" class="flex-1 btn btn-secondary text-xs py-2">Cancel</button>
+                <button id="confirm-save-template-btn" class="flex-1 btn btn-primary text-xs py-2">Save</button>
             </div>
         </div>
     </div>
 
-    <!-- Custom Load Template Modal -->
-    <div id="load-template-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="load-template-modal-title">
-        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 transform transition-all" style="border-color: var(--color-blue-violet);">
-            <div class="mb-6">
-                <div class="flex items-center mb-2">
-                    <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-3" style="background: linear-gradient(135deg, var(--color-blue-violet), var(--color-carrot-orange));">
-                        <i class="fas fa-folder-open text-white"></i>
-                    </div>
-                    <h2 id="load-template-modal-title" class="text-2xl font-bold" style="color: var(--color-text);">Load Template</h2>
+    <!-- Load Template Modal -->
+    <div id="load-template-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="load-template-modal-title">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl border border-slate-200 transform transition-all">
+            <div class="flex items-center gap-2.5 mb-4">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-50 text-indigo-600">
+                    <i class="fas fa-folder-open"></i>
                 </div>
-                <p class="text-sm" style="color: var(--color-text-muted);">Select a template to load</p>
+                <h2 id="load-template-modal-title" class="text-base font-bold text-slate-900">Load Template</h2>
             </div>
             
             <div>
-                <label class="block text-sm font-semibold mb-2" style="color: var(--color-text);">
-                    <i class="fas fa-list mr-1" style="color: var(--color-blue-violet);"></i>Available Templates
-                </label>
-                <div id="template-list" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-                    <!-- Templates will be populated here -->
-                </div>
+                <label class="form-label mb-2">Available Templates</label>
+                <div id="template-list" class="space-y-1.5 max-h-60 overflow-y-auto custom-scrollbar"></div>
             </div>
             
-            <div class="flex gap-3 mt-6">
-                <button id="cancel-load-template-btn" class="flex-1 px-6 py-3 rounded-xl font-semibold transition-all hover:shadow-md" style="background: var(--color-platinum); color: var(--color-text);">
-                    <i class="fas fa-times mr-2"></i>Cancel
-                </button>
+            <div class="flex gap-2 mt-5">
+                <button id="cancel-load-template-btn" class="w-full btn btn-secondary text-xs py-2">Close</button>
             </div>
         </div>
     </div>
 
-    <!-- Custom Spam Rewrite Modal -->
-    <div id="spam-rewrite-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="spam-rewrite-modal-title">
-        <div class="bg-white rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl border-2 transform transition-all" style="border-color: var(--color-poppy);">
-            <div class="mb-6">
-                <div class="flex items-center mb-2">
-                    <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-3" style="background: linear-gradient(135deg, var(--color-poppy), var(--color-carrot-orange));">
-                        <i class="fas fa-broom text-white"></i>
-                    </div>
-                    <h2 id="spam-rewrite-modal-title" class="text-2xl font-bold" style="color: var(--color-text);">Rewrite Spam Words</h2>
+    <!-- Spam Rewrite Modal -->
+    <div id="spam-rewrite-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="spam-rewrite-modal-title">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl border border-slate-200 transform transition-all">
+            <div class="flex items-center gap-2.5 mb-4">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-rose-50 text-rose-600">
+                    <i class="fas fa-broom"></i>
                 </div>
-                <p class="text-sm" style="color: var(--color-text-muted);">Enter words/phrases to rewrite (comma-separated)</p>
+                <h2 id="spam-rewrite-modal-title" class="text-base font-bold text-slate-900">Rewrite Spam Words</h2>
             </div>
             
             <div>
-                <label for="spam-words-input" class="block text-sm font-semibold mb-2" style="color: var(--color-text);">
-                    <i class="fas fa-exclamation-triangle mr-1" style="color: var(--color-poppy);"></i>Spam Words/Phrases
-                </label>
-                <textarea 
-                    id="spam-words-input" 
-                    class="input-field" 
-                    rows="4"
-                    placeholder="e.g., Name, Only, Open, Solution"
-                    style="border-color: var(--color-platinum); resize: vertical; min-height: 100px;"
-                ></textarea>
-                <p class="text-xs mt-2" style="color: var(--color-text-muted);">
-                    <i class="fas fa-info-circle mr-1"></i>Leave empty to use detected spam words automatically
-                </p>
+                <label for="spam-words-input" class="form-label">Spam Words/Phrases</label>
+                <textarea id="spam-words-input" class="form-input text-xs" rows="3" placeholder="e.g., Free, Guarantee, Act Now (or leave blank to auto-detect)"></textarea>
             </div>
             
-            <div class="flex gap-3 mt-6">
-                <button id="cancel-spam-rewrite-btn" class="flex-1 px-6 py-3 rounded-xl font-semibold transition-all hover:shadow-md" style="background: var(--color-platinum); color: var(--color-text);">
-                    <i class="fas fa-times mr-2"></i>Cancel
-                </button>
-                <button id="confirm-spam-rewrite-btn" class="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5" style="background: var(--color-poppy);">
-                    <i class="fas fa-check mr-2"></i>Rewrite Words
-                </button>
+            <div class="flex gap-2 mt-5">
+                <button id="cancel-spam-rewrite-btn" class="flex-1 btn btn-secondary text-xs py-2">Cancel</button>
+                <button id="confirm-spam-rewrite-btn" class="flex-1 btn btn-danger text-xs py-2">Rewrite</button>
             </div>
         </div>
     </div>
 
-    <!-- Deliverability Health Report Modal -->
-    <div id="health-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="health-modal-title">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border-2" style="border-color: var(--color-platinum);">
-            <div class="flex justify-between items-center pb-4 border-b-2" style="border-color: var(--color-platinum);">
+    <!-- Deliverability Health Diagnostic Modal -->
+    <div id="health-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center hidden z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="health-modal-title">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
                 <div class="flex items-center space-x-3">
-                    <div id="health-modal-icon-wrap" class="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-600 text-lg">
+                    <div id="health-modal-icon-wrap" class="w-9 h-9 rounded-xl flex items-center justify-center bg-emerald-50 text-emerald-600 text-base">
                         <i class="fas fa-shield-alt"></i>
                     </div>
                     <div>
-                        <h2 id="health-modal-title" class="text-xl font-bold text-slate-900">Deliverability Health</h2>
-                        <p class="text-xs text-slate-500">Inbox placement & compliance diagnostic</p>
+                        <h2 id="health-modal-title" class="text-base font-bold text-slate-900">Deliverability Health</h2>
+                        <p class="text-[11px] text-slate-500">Inbox placement & compliance report</p>
                     </div>
                 </div>
-                <button id="close-health-modal" class="text-slate-400 hover:text-slate-600 text-lg p-1">
+                <button id="close-health-modal" class="text-slate-400 hover:text-slate-600 text-sm p-1">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <div class="py-5 space-y-4">
-                <!-- Score Circle / Banner -->
-                <div class="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="py-4 space-y-3">
+                <!-- Score Banner -->
+                <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
                     <div>
-                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Overall Score</div>
-                        <div class="text-3xl font-extrabold" id="health-modal-score">100 / 100</div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Health Score</div>
+                        <div class="text-2xl font-black text-slate-900" id="health-modal-score">100 / 100</div>
                     </div>
-                    <div id="health-modal-grade-badge" class="px-4 py-1.5 rounded-full text-sm font-bold bg-emerald-100 text-emerald-700">
+                    <div id="health-modal-grade-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
                         Great
                     </div>
                 </div>
 
                 <!-- Metrics Grid -->
                 <div class="grid grid-cols-3 gap-2 text-center">
-                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                        <div class="text-xs text-slate-500 font-medium">Spam Hits</div>
-                        <div id="health-modal-spam-hits" class="text-lg font-bold text-slate-800">0</div>
+                    <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                        <div class="text-[10px] text-slate-400 font-bold uppercase">Spam Hits</div>
+                        <div id="health-modal-spam-hits" class="text-base font-bold text-slate-800">0</div>
                     </div>
-                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                        <div class="text-xs text-slate-500 font-medium">Read Time</div>
-                        <div id="health-modal-read-time" class="text-lg font-bold text-slate-800">1 min</div>
+                    <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                        <div class="text-[10px] text-slate-400 font-bold uppercase">Read Time</div>
+                        <div id="health-modal-read-time" class="text-base font-bold text-slate-800">1 min</div>
                     </div>
-                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                        <div class="text-xs text-slate-500 font-medium">Word Count</div>
-                        <div id="health-modal-word-count" class="text-lg font-bold text-slate-800">0</div>
+                    <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                        <div class="text-[10px] text-slate-400 font-bold uppercase">Words</div>
+                        <div id="health-modal-word-count" class="text-base font-bold text-slate-800">0</div>
                     </div>
                 </div>
 
-                <!-- Diagnostic Checklist -->
+                <!-- Findings Checklist -->
                 <div>
-                    <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Checklist & Findings</h3>
-                    <div id="health-modal-findings" class="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        <!-- Populated dynamically -->
-                    </div>
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Diagnostic Findings</h3>
+                    <div id="health-modal-findings" class="space-y-1.5 max-h-44 overflow-y-auto custom-scrollbar pr-1"></div>
                 </div>
             </div>
 
-            <div class="pt-3 border-t-2 flex justify-end" style="border-color: var(--color-platinum);">
-                <button id="health-modal-ok-btn" class="px-5 py-2 rounded-xl text-white font-semibold text-sm transition-all" style="background: var(--color-blue-violet);">
+            <div class="pt-3 border-t border-slate-100 flex justify-end">
+                <button id="health-modal-ok-btn" class="btn btn-primary text-xs py-1.5 px-4">
                     Got It
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Help Modal -->
-    <div id="help-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
-        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto shadow-2xl border-2" style="border-color: var(--color-blue-violet);">
-            <div class="flex justify-between items-center mb-6">
-                <h2 id="help-modal-title" class="text-2xl font-bold" style="color: var(--color-text);">Keyboard Shortcuts & Help</h2>
-                <button id="close-help" class="text-2xl w-10 h-10 rounded-lg transition-all" style="color: var(--color-text-muted);" onmouseover="this.style.background='var(--color-platinum)'" onmouseout="this.style.background='transparent'">&times;</button>
+    <!-- Help & Shortcuts Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
+        <div class="bg-white rounded-2xl p-6 max-w-xl w-full mx-4 shadow-2xl border border-slate-200">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                <h2 id="help-modal-title" class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fas fa-keyboard text-indigo-500"></i> Keyboard Shortcuts & Quick Help
+                </h2>
+                <button id="close-help" class="text-slate-400 hover:text-slate-700 text-lg leading-none">&times;</button>
             </div>
-            <div class="space-y-6">
-                <div>
-                    <h3 class="text-lg font-semibold mb-3" style="color: var(--color-blue-violet);">Keyboard Shortcuts</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div class="flex justify-between items-center p-3 rounded-lg border-2 transition-all hover:shadow-md" style="background: var(--color-light-bg); border-color: var(--color-platinum);">
-                            <span style="color: var(--color-text);">Bold</span>
-                            <kbd class="px-3 py-1.5 rounded-lg text-sm font-semibold" style="background: var(--color-blue-violet); color: white;">Ctrl+B</kbd>
-                        </div>
-                        <div class="flex justify-between items-center p-3 rounded-lg border-2 transition-all hover:shadow-md" style="background: var(--color-light-bg); border-color: var(--color-platinum);">
-                            <span style="color: var(--color-text);">Italic</span>
-                            <kbd class="px-3 py-1.5 rounded-lg text-sm font-semibold" style="background: var(--color-blue-violet); color: white;">Ctrl+I</kbd>
-                        </div>
-                        <div class="flex justify-between items-center p-3 rounded-lg border-2 transition-all hover:shadow-md" style="background: var(--color-light-bg); border-color: var(--color-platinum);">
-                            <span style="color: var(--color-text);">Underline</span>
-                            <kbd class="px-3 py-1.5 rounded-lg text-sm font-semibold" style="background: var(--color-blue-violet); color: white;">Ctrl+U</kbd>
-                        </div>
-                        <div class="flex justify-between items-center p-3 rounded-lg border-2 transition-all hover:shadow-md" style="background: var(--color-light-bg); border-color: var(--color-platinum);">
-                            <span style="color: var(--color-text);">Undo</span>
-                            <kbd class="px-3 py-1.5 rounded-lg text-sm font-semibold" style="background: var(--color-blue-violet); color: white;">Ctrl+Z</kbd>
-                        </div>
-                        <div class="flex justify-between items-center p-3 rounded-lg border-2 transition-all hover:shadow-md" style="background: var(--color-light-bg); border-color: var(--color-platinum);">
-                            <span style="color: var(--color-text);">Redo</span>
-                            <kbd class="px-3 py-1.5 rounded-lg text-sm font-semibold" style="background: var(--color-blue-violet); color: white;">Ctrl+Y</kbd>
-                        </div>
-                        <div class="flex justify-between items-center p-3 rounded-lg border-2 transition-all hover:shadow-md" style="background: var(--color-light-bg); border-color: var(--color-platinum);">
-                            <span style="color: var(--color-text);">Save Template</span>
-                            <kbd class="px-3 py-1.5 rounded-lg text-sm font-semibold" style="background: var(--color-carrot-orange); color: white;">Ctrl+S</kbd>
-                        </div>
-                        <div class="flex justify-between items-center p-3 rounded-lg border-2 transition-all hover:shadow-md" style="background: var(--color-light-bg); border-color: var(--color-platinum);">
-                            <span style="color: var(--color-text);">Copy HTML</span>
-                            <kbd class="px-3 py-1.5 rounded-lg text-sm font-semibold" style="background: var(--color-blue-violet); color: white;">Ctrl+Shift+C</kbd>
-                        </div>
-                        <div class="flex justify-between items-center p-3 rounded-lg border-2 transition-all hover:shadow-md" style="background: var(--color-light-bg); border-color: var(--color-platinum);">
-                            <span style="color: var(--color-text);">AI Optimize</span>
-                            <kbd class="px-3 py-1.5 rounded-lg text-sm font-semibold" style="background: var(--color-blue-violet); color: white;">Ctrl+O</kbd>
-                        </div>
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 border border-slate-200">
+                        <span class="text-slate-700 font-medium">Bold</span>
+                        <kbd class="px-2 py-0.5 rounded bg-white border border-slate-300 font-mono text-[10px]">Ctrl+B</kbd>
+                    </div>
+                    <div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 border border-slate-200">
+                        <span class="text-slate-700 font-medium">Italic</span>
+                        <kbd class="px-2 py-0.5 rounded bg-white border border-slate-300 font-mono text-[10px]">Ctrl+I</kbd>
+                    </div>
+                    <div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 border border-slate-200">
+                        <span class="text-slate-700 font-medium">Underline</span>
+                        <kbd class="px-2 py-0.5 rounded bg-white border border-slate-300 font-mono text-[10px]">Ctrl+U</kbd>
+                    </div>
+                    <div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 border border-slate-200">
+                        <span class="text-slate-700 font-medium">Undo / Redo</span>
+                        <kbd class="px-2 py-0.5 rounded bg-white border border-slate-300 font-mono text-[10px]">Ctrl+Z / Y</kbd>
+                    </div>
+                    <div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 border border-slate-200">
+                        <span class="text-slate-700 font-medium">Save Template</span>
+                        <kbd class="px-2 py-0.5 rounded bg-white border border-slate-300 font-mono text-[10px]">Ctrl+S</kbd>
+                    </div>
+                    <div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 border border-slate-200">
+                        <span class="text-slate-700 font-medium">Copy HTML</span>
+                        <kbd class="px-2 py-0.5 rounded bg-white border border-slate-300 font-mono text-[10px]">Ctrl+Shift+C</kbd>
                     </div>
                 </div>
-                <div>
-                    <h3 class="text-lg font-semibold mb-3" style="color: var(--color-carrot-orange);">Features</h3>
-                    <ul class="space-y-2" style="color: var(--color-text);">
-                        <li class="flex items-start"><i class="fas fa-check mr-2 mt-1" style="color: var(--color-carrot-orange);"></i>Real-time spam checking with keyword highlighting</li>
-                        <li class="flex items-start"><i class="fas fa-check mr-2 mt-1" style="color: var(--color-carrot-orange);"></i>AI-powered content optimization and suggestions</li>
-                        <li class="flex items-start"><i class="fas fa-check mr-2 mt-1" style="color: var(--color-carrot-orange);"></i>Template variables with live preview</li>
-                        <li class="flex items-start"><i class="fas fa-check mr-2 mt-1" style="color: var(--color-carrot-orange);"></i>Rich text editor with formatting tools</li>
-                        <li class="flex items-start"><i class="fas fa-check mr-2 mt-1" style="color: var(--color-carrot-orange);"></i>Auto-save functionality</li>
-                        <li class="flex items-start"><i class="fas fa-check mr-2 mt-1" style="color: var(--color-carrot-orange);"></i>Template library and management</li>
+                <div class="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 text-xs text-indigo-900 leading-relaxed">
+                    <p class="font-semibold mb-1">Tips for high deliverability:</p>
+                    <ul class="list-disc ml-4 space-y-0.5 text-[11px] text-indigo-800">
+                        <li>Maintain a high text-to-image ratio and avoid all-caps subjects.</li>
+                        <li>Use the Deliverability Health badge to spot trigger words before sending.</li>
+                        <li>Test your layout on mobile (375px) to ensure no overflowing elements.</li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Notification System -->
-    <div id="notification" class="fixed top-24 right-6 text-white px-6 py-3 rounded-xl shadow-2xl hidden font-semibold flex items-center gap-2 transform transition-all duration-300 translate-x-12 opacity-0 z-[60]" style="background: var(--color-carrot-orange);">
+    <!-- Notification Toast -->
+    <div id="notification" class="fixed top-16 right-6 text-white px-4 py-2.5 rounded-xl shadow-xl hidden font-semibold flex items-center gap-2 transform transition-all duration-300 translate-x-12 opacity-0 z-[60] text-xs bg-indigo-600">
         <i id="notification-icon" class="fas fa-check-circle"></i>
         <span id="notification-text"></span>
     </div>
 
-    <!-- Status Bar -->
-    <div class="fixed bottom-0 left-0 right-0 text-white py-3 px-6 text-sm flex justify-between items-center z-40 backdrop-blur-lg border-t-2" style="background: linear-gradient(135deg, var(--color-black) 0%, #1a191a 100%); border-color: var(--color-platinum);">
-        <div class="flex items-center space-x-6">
-            <span id="auto-save-status" class="flex items-center font-medium">
-                <i class="fas fa-save mr-2" style="color: var(--color-carrot-orange);"></i>
+    <!-- Bottom Status Bar -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 text-slate-600 py-2 px-6 text-xs flex justify-between items-center z-40">
+        <div class="flex items-center space-x-5">
+            <span id="auto-save-status" class="flex items-center font-medium text-emerald-600">
+                <i class="fas fa-check-circle mr-1.5 text-emerald-500"></i>
                 <span>Auto-saved</span>
             </span>
             <span id="word-count" class="flex items-center">
-                <i class="fas fa-font mr-2" style="color: var(--color-blue-violet);"></i>
+                <i class="fas fa-font mr-1.5 text-slate-400"></i>
                 <span>Words: 0</span>
             </span>
             <span id="char-count" class="flex items-center">
-                <i class="fas fa-keyboard mr-2" style="color: var(--color-blue-violet);"></i>
+                <i class="fas fa-keyboard mr-1.5 text-slate-400"></i>
                 <span>Characters: 0</span>
             </span>
         </div>
-        <div class="flex items-center space-x-4">
-            <span id="last-saved" class="font-medium" style="color: var(--color-platinum);">
-                Last saved: Just now
-            </span>
+        <div class="flex items-center space-x-3">
+            <span id="last-saved" class="text-slate-400">Last saved: Just now</span>
         </div>
-    </div>
+    </footer>
 
-    <!-- Spam Filter Script (External) -->
-    <script src="spam-filter.js"></script>
+    
+<script src="spam-filter.js"></script>
     
     <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -1645,6 +1252,55 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 });
             },
             
+            updateHealthBadgeAndModal() {
+                const html = this.nodes.htmlInput?.value || '';
+                const subject = this.nodes.subjectLineInput?.value || '';
+                const plainText = this.nodes.emailPreview?.innerText || '';
+                const spamHits = window.currentSpamHits || 0;
+                
+                const healthResult = window.EmailEditorUtils?.calculateHealthScore ? 
+                    window.EmailEditorUtils.calculateHealthScore(html, subject, spamHits) : 
+                    (window.SpamEngine?.calculateHealthScore ? window.SpamEngine.calculateHealthScore(html, subject, spamHits) : { score: 100, grade: 'Great', findings: [] });
+
+                const scoreValEl = document.getElementById('health-score-val');
+                const scoreGradeEl = document.getElementById('health-score-grade');
+                if (scoreValEl) scoreValEl.textContent = `${healthResult.score}/100`;
+                if (scoreGradeEl) scoreGradeEl.textContent = healthResult.grade;
+
+                const modalScore = document.getElementById('health-modal-score');
+                const modalGrade = document.getElementById('health-modal-grade-badge');
+                const modalSpamHits = document.getElementById('health-modal-spam-hits');
+                const modalReadTime = document.getElementById('health-modal-read-time');
+                const modalWordCount = document.getElementById('health-modal-word-count');
+                const modalFindings = document.getElementById('health-modal-findings');
+
+                if (modalScore) modalScore.textContent = `${healthResult.score} / 100`;
+                if (modalGrade) modalGrade.textContent = healthResult.grade;
+                if (modalSpamHits) modalSpamHits.textContent = spamHits;
+                
+                const words = plainText.trim() ? plainText.trim().split(/\s+/).length : 0;
+                if (modalWordCount) modalWordCount.textContent = words;
+                const readMinutes = Math.max(1, Math.ceil(words / 200));
+                if (modalReadTime) modalReadTime.textContent = `${readMinutes} min`;
+
+                if (modalFindings) {
+                    modalFindings.innerHTML = '';
+                    if (healthResult.findings && healthResult.findings.length > 0) {
+                        healthResult.findings.forEach(f => {
+                            const item = document.createElement('div');
+                            item.className = 'flex items-center gap-2 p-2 rounded-lg text-xs bg-slate-50 border border-slate-200';
+                            item.innerHTML = `<i class="fas fa-exclamation-circle text-amber-500"></i><span>${window.EmailEditorUtils?.escapeHtml ? window.EmailEditorUtils.escapeHtml(f) : f}</span>`;
+                            modalFindings.appendChild(item);
+                        });
+                    } else {
+                        const item = document.createElement('div');
+                        item.className = 'flex items-center gap-2 p-2 rounded-lg text-xs bg-emerald-50 border border-emerald-200 text-emerald-700';
+                        item.innerHTML = `<i class="fas fa-check-circle text-emerald-500"></i><span>No deliverability warnings found. Ready to send!</span>`;
+                        modalFindings.appendChild(item);
+                    }
+                }
+            },
+
             cleanHTML(html) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
@@ -1929,6 +1585,7 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 // Apply link styling to all links
                 this.styleAllLinks();
                 this.restoreSelection(this.nodes.emailPreview, selection);
+                this.updateHealthBadgeAndModal();
             },
             
             styleAllLinks() {
