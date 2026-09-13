@@ -4,7 +4,7 @@ This document tracks all bugs, usability issues, and security vulnerabilities id
 
 ---
 
-## 🟢 Audit Status: All 12 Issues Fully Resolved & Tested
+## 🟢 Audit Status: All 17 Issues Fully Resolved & Tested
 
 | ID | Category | Severity | Issue Description | Resolution Status | Test Coverage |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -20,6 +20,11 @@ This document tracks all bugs, usability issues, and security vulnerabilities id
 | **#10** | Template Library | 🟡 Medium | Lack of curated starter email templates and library seeding | **Resolved** (Added 6 responsive starter templates with one-click gallery and seed button) | `test/starter-templates.test.js` |
 | **#11** | Deliverability | 🔴 High | No pre-flight clipping inspector or accessibility validation | **Resolved** (Implemented PreFlightInspector checking Gmail 102KB limit, CAN-SPAM/GDPR, alt text, link security) | `test/preflight-inspector.test.js` |
 | **#12** | Export / Components | 🟡 Medium | Incomplete export formats and missing bulletproof Outlook components | **Resolved** (Added RFC-822 .eml export, plain text generator, MSO VML buttons, 2-col grids, dividers, and footers) | `test/export-tools.test.js` |
+| **#13** | AI / Provider | 🔴 High | Single provider bottleneck & lack of fast LLM inference | **Resolved** (Integrated Groq Cloud API, live model discovery, and intelligent auto-rotation fallback) | `test/groq-service.test.js`, `test/ai-assistant.test.js` |
+| **#14** | Module / Runtime | 🔴 High | `templates.html` crashed with `SyntaxError: Unexpected token 'export'` | **Resolved** (Added `type="module"` to script tag and added DOM auto-init) | `test/template-manager.test.js` |
+| **#15** | Editor / UX | 🔴 High | HighlightWithinTextarea scroll and prototype binding crash | **Resolved** (Implemented missing `handleScroll` and `blockContainerScroll` prototype methods) | `test/spam-engine.test.js` |
+| **#16** | Diagnostics / UI | 🟡 Medium | Health score badge had no click listener & preflight size was `(undefined)` | **Resolved** (Wired health modal show/hide listeners and provided `formattedSize` from checkHtmlSize) | `test/editor-app.test.js`, `test/preflight-inspector.test.js` |
+| **#17** | AI / Orchestration | 🔴 High | AI Assistant ignored pre-rendered prompts and explicit temperatures | **Resolved** (Updated `generateWithFallback` to honor explicit `prompt`, `...variables`, and `temperature`) | `test/ai-assistant.test.js` |
 
 ---
 
@@ -57,7 +62,23 @@ This document tracks all bugs, usability issues, and security vulnerabilities id
 - **Previous Issue**: Limited export options and buttons broken in Outlook desktop versions.
 - **Fix**: Added RFC-822 `.eml` test email generator, plain text converter, and Outlook MSO `v:roundrect` bulletproof component inserters.
 
+### 9. Groq Cloud Ultra-Fast AI & Auto-Rotate Fallback (#13, #17)
+- **Previous Issue**: Slow single-provider AI dependent solely on Gemini, with no fallback when rate-limited.
+- **Fix**: Built `GroqService` supporting OpenAI-compatible Groq endpoints, dynamic model discovery, and `AIAssistant.prototype.generateWithFallback` with cooldown tracking and cross-model rotation.
+
+### 10. Template Manager Module Script Resolution (#14)
+- **Previous Issue**: Loading `js/templates/template-manager.js` as a classic script caused `SyntaxError: Unexpected token 'export'`.
+- **Fix**: Updated `templates.html` to `<script type="module">` and added DOM auto-initialization.
+
+### 11. Textarea Scroll & Prototype Binding Fix (#15)
+- **Previous Issue**: `HighlightWithinTextarea.prototype.generate` failed with `Cannot read properties of undefined (reading 'bind')` when scrolling.
+- **Fix**: Added missing `handleScroll` and `blockContainerScroll` prototype methods across root and shared copies.
+
+### 12. Deliverability Health Diagnostics Modal & Preflight Formatted Size (#16)
+- **Previous Issue**: Deliverability badge tooltip invited clicking for diagnostics but lacked click listeners; Preflight badge rendered `(undefined)` for size.
+- **Fix**: Implemented `showHealthModal` and `hideHealthModal` event handlers on `#health-score-badge`, and added `formattedSize` property to `PreFlightInspector.checkHtmlSize`.
+
 ---
 
 ## 🧪 Verification
-All resolutions are verified by 121 automated Vitest unit and integration tests with **99.27% statement coverage**, **96.00% branch coverage**, and **100% function coverage**.
+All resolutions are verified by 184 automated Vitest unit and integration tests across 16 test files with zero failures.
