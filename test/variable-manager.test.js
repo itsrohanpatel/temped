@@ -203,4 +203,71 @@ describe('VariableManager Subsystem Tests', () => {
         expect(rendered).toContain('data-variable="company_name" data-original-token="{{company_name}}" contenteditable="false">Infosys</span>');
         expect(rendered).toContain('data-variable="sender-name" data-original-token="{{sender-name}}" contenteditable="false">Rohan Patel</span>');
     });
+
+    it('parseBulkVariables correctly parses comma-separated, newline, and key-value formats', () => {
+        const raw = `
+            first_name=Alex
+            last_name="Taylor"
+            company: Acme Corp
+            role = Head of Growth
+            email, phone, address
+            {{meeting_link}}
+            first_name=Duplicate
+        `;
+        const parsed = VariableManager.parseBulkVariables(raw);
+        expect(parsed).toEqual([
+            { name: 'first_name', value: 'Alex' },
+            { name: 'last_name', value: 'Taylor' },
+            { name: 'company', value: 'Acme Corp' },
+            { name: 'role', value: 'Head of Growth' },
+            { name: 'email', value: '' },
+            { name: 'phone', value: '' },
+            { name: 'address', value: '' },
+            { name: 'meeting_link', value: '' }
+        ]);
+    });
+
+    it('bulkAddVariables adds rows to container and triggers update callback', () => {
+        const container = document.getElementById('variables-container');
+        const onUpdate = vi.fn();
+
+        const raw = 'candidate_name=Sarah, role=Senior Engineer, date=Tomorrow';
+        const res = VariableManager.bulkAddVariables(container, raw, onUpdate);
+
+        expect(res.added).toBe(3);
+        expect(res.total).toBe(3);
+        expect(container.children.length).toBe(3);
+        expect(onUpdate).toHaveBeenCalled();
+
+        const vars = VariableManager.getVariables(container);
+        expect(vars.get('candidate_name')).toBe('Sarah');
+        expect(vars.get('role')).toBe('Senior Engineer');
+        expect(vars.get('date')).toBe('Tomorrow');
+
+        // Test duplicate protection & empty value updating
+        const updateRaw = 'candidate_name=Other, date=UpdatedDate, new_var=123';
+        const res2 = VariableManager.bulkAddVariables(container, updateRaw, onUpdate);
+        expect(res2.added).toBe(1); // only new_var added
+        expect(container.children.length).toBe(4);
+    });
+
+    it('filterVariableMatches returns matching suggestions for autocomplete queries', () => {
+        const currentVars = new Map([
+            ['user_name', 'Alice'],
+            ['company_name', 'TechCorp']
+        ]);
+
+        // Query matching active variable
+        const matchesUser = VariableManager.filterVariableMatches('user', currentVars);
+        expect(matchesUser.some(m => m.name === 'user_name' && m.type === 'active')).toBe(true);
+
+        // Query matching standard variable
+        const matchesFirst = VariableManager.filterVariableMatches('first', currentVars);
+        expect(matchesFirst.some(m => m.name === 'first_name' && m.type === 'standard')).toBe(true);
+
+        // Query matching spintax
+        const matchesSpin = VariableManager.filterVariableMatches('spin', currentVars);
+        expect(matchesSpin.some(m => m.type === 'spintax')).toBe(true);
+    });
 });
+

@@ -57,6 +57,193 @@
             return row;
         },
 
+        /**
+         * Parses a bulk string of variables (comma-separated, newline-separated, or name=value pairs)
+         * @param {string} rawText
+         * @returns {Array<{ name: string, value: string }>}
+         */
+        parseBulkVariables(rawText) {
+            if (!rawText || typeof rawText !== 'string') return [];
+            const results = [];
+            const seen = new Set();
+
+            const lines = rawText.split(/[\r\n;]+/);
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+
+                // Split line by commas if not inside quotes or assignment
+                const segments = (line.includes(',') && !line.includes('="') && !line.includes("='"))
+                    ? line.split(',')
+                    : [line];
+
+                for (let seg of segments) {
+                    seg = seg.trim();
+                    if (!seg) continue;
+
+                    // Strip outer {{ and }} if present
+                    seg = seg.replace(/^{{\s*|\s*}}$/g, '').trim();
+
+                    let name = '';
+                    let value = '';
+
+                    const eqIdx = seg.indexOf('=');
+                    const colonIdx = seg.indexOf(':');
+
+                    if (eqIdx !== -1 && (colonIdx === -1 || eqIdx < colonIdx)) {
+                        name = seg.slice(0, eqIdx).trim();
+                        value = seg.slice(eqIdx + 1).trim();
+                    } else if (colonIdx !== -1) {
+                        name = seg.slice(0, colonIdx).trim();
+                        value = seg.slice(colonIdx + 1).trim();
+                    } else {
+                        if (seg.includes('|')) {
+                            const parts = seg.split('|');
+                            name = parts[0].trim();
+                            value = parts.slice(1).join('|').trim();
+                        } else {
+                            name = seg.trim();
+                            value = '';
+                        }
+                    }
+
+                    // Sanitize variable name
+                    name = name.replace(/[^a-zA-Z0-9_.-]/g, '').trim();
+                    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+                        value = value.slice(1, -1);
+                    }
+
+                    if (name && !seen.has(name)) {
+                        seen.add(name);
+                        results.push({ name, value });
+                    }
+                }
+            }
+
+            return results;
+        },
+
+        /**
+         * Bulk adds variables to container element
+         * @param {HTMLElement} containerEl
+         * @param {string} rawText
+         * @param {function} onUpdate
+         * @returns {{ added: number, updated: number, total: number }}
+         */
+        bulkAddVariables(containerEl, rawText, onUpdate = null) {
+            if (!containerEl) return { added: 0, updated: 0, total: 0 };
+            const parsed = this.parseBulkVariables(rawText);
+            if (!parsed || parsed.length === 0) return { added: 0, updated: 0, total: 0 };
+
+            const existing = this.getVariables(containerEl);
+            let added = 0;
+            let updated = 0;
+
+            parsed.forEach(item => {
+                if (!existing.has(item.name)) {
+                    this.addVariableRow(containerEl, item.name, item.value, onUpdate);
+                    existing.set(item.name, item.value);
+                    added++;
+                } else if (item.value && !existing.get(item.name)) {
+                    containerEl.querySelectorAll('.variable-row').forEach(row => {
+                        const nameInput = row.querySelector('.variable-name');
+                        const valInput = row.querySelector('.variable-value');
+                        if (nameInput && valInput && nameInput.value.trim() === item.name && !valInput.value) {
+                            valInput.value = item.value;
+                            updated++;
+                        }
+                    });
+                    existing.set(item.name, item.value);
+                }
+            });
+
+            if (typeof onUpdate === 'function') {
+                onUpdate();
+            }
+
+            return { added, updated, total: parsed.length };
+        },
+
+        /**
+         * Filters variable suggestions matching a query for slash command or autocomplete
+         */
+        filterVariableMatches(query = '', currentVariables = new Map()) {
+            const cleanQuery = (query || '').toLowerCase().trim();
+
+            const STANDARD_VARS = [
+                { name: 'first_name', defaultValue: 'Alex', desc: 'Recipient First Name' },
+                { name: 'last_name', defaultValue: 'Taylor', desc: 'Recipient Last Name' },
+                { name: 'full_name', defaultValue: 'Alex Taylor', desc: 'Recipient Full Name' },
+                { name: 'company_name', defaultValue: 'Acme Corp', desc: 'Target Organization' },
+                { name: 'company', defaultValue: 'Acme Corp', desc: 'Organization shorthand' },
+                { name: 'job_title', defaultValue: 'Product Lead', desc: 'Recipient Role / Title' },
+                { name: 'sender-name', defaultValue: 'Rohan Patel', desc: 'Sender Full Name' },
+                { name: 'sender_email', defaultValue: 'rohan@example.com', desc: 'Sender Email Address' },
+                { name: 'recipient_email', defaultValue: 'alex@example.com', desc: 'Recipient Email' },
+                { name: 'Date', defaultValue: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), desc: 'Current Date' },
+                { name: 'meeting_link', defaultValue: 'https://cal.com/meeting', desc: 'Calendar Meeting Link' },
+                { name: 'unsubscribe_url', defaultValue: 'https://example.com/unsubscribe', desc: 'One-click Unsubscribe Link' },
+                { name: 'view_in_browser', defaultValue: 'https://example.com/view', desc: 'Web Browser View Link' }
+            ];
+
+            const SPINTAX_SNIPPETS = [
+                { token: '{Hi|Hey|Hello}', name: 'Greeting Spintax', desc: 'Randomized opening greeting', isSnippet: true },
+                { token: '{Best regards|Warm regards|Sincerely}', name: 'Signoff Spintax', desc: 'Randomized closing signoff', isSnippet: true },
+                { token: '{quick question|brief follow-up|quick inquiry}', name: 'Subject Hook Spintax', desc: 'Subject line hook', isSnippet: true }
+            ];
+
+            const results = [];
+            const seen = new Set();
+
+            if (currentVariables && typeof currentVariables.forEach === 'function') {
+                currentVariables.forEach((value, name) => {
+                    if (!name) return;
+                    if (!cleanQuery || name.toLowerCase().includes(cleanQuery) || (value && value.toLowerCase().includes(cleanQuery))) {
+                        seen.add(name.toLowerCase());
+                        results.push({
+                            name,
+                            token: `{{${name}}}`,
+                            sampleValue: value || 'Empty value',
+                            description: 'Active Template Variable',
+                            type: 'active'
+                        });
+                    }
+                });
+            }
+
+            STANDARD_VARS.forEach(v => {
+                if (!seen.has(v.name.toLowerCase())) {
+                    if (!cleanQuery || v.name.toLowerCase().includes(cleanQuery) || v.desc.toLowerCase().includes(cleanQuery)) {
+                        seen.add(v.name.toLowerCase());
+                        results.push({
+                            name: v.name,
+                            token: `{{${v.name}}}`,
+                            sampleValue: v.defaultValue,
+                            description: v.desc,
+                            type: 'standard'
+                        });
+                    }
+                }
+            });
+
+            if (!cleanQuery || cleanQuery.startsWith('spin') || cleanQuery.startsWith('{') || 'greeting signoff hello hi'.includes(cleanQuery)) {
+                SPINTAX_SNIPPETS.forEach(s => {
+                    if (!cleanQuery || s.name.toLowerCase().includes(cleanQuery) || s.token.toLowerCase().includes(cleanQuery) || s.desc.toLowerCase().includes(cleanQuery)) {
+                        results.push({
+                            name: s.name,
+                            token: s.token,
+                            sampleValue: s.token,
+                            description: s.desc,
+                            type: 'spintax'
+                        });
+                    }
+                });
+            }
+
+            return results;
+        },
+
         extractVariableDefinitions(text) {
             if (!text || typeof text !== 'string') return [];
             const regex = new RegExp(TOKEN_REGEX.source, 'g');

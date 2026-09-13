@@ -173,10 +173,13 @@ button, .btn, .card, input, select, textarea, a, .template-item, .pill-badge {
 .window-header {
     background: var(--color-slate-50);
     border-bottom: 1px solid var(--color-border);
-    padding: 0.75rem 1rem;
+    padding: 0.625rem 0.875rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-height: 44px;
 }
 
 .traffic-dots {
@@ -336,3 +339,75 @@ html {
     width: 100%;
     margin-bottom: 1em;
 }
+
+/* Slash Variable Command Palette */
+#slash-variable-palette {
+    position: absolute;
+    z-index: 9999;
+    width: 320px;
+    max-width: 90vw;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    animation: slashPaletteFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slashPaletteFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.slash-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(241, 245, 249, 0.8);
+    transition: background-color 0.1s ease;
+}
+
+.slash-item:last-child {
+    border-bottom: none;
+}
+
+.slash-item:hover, .slash-item.selected {
+    background-color: #f1f5f9;
+}
+
+.slash-item.selected {
+    border-left: 3px solid var(--color-indigo-500);
+}
+
+.slash-item-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 9999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.slash-item-badge.active {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.slash-item-badge.standard {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.slash-item-badge.spintax {
+    background: #fae8ff;
+    color: #86198f;
+}
+

@@ -249,6 +249,8 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
             init() {
                 this.queryNodes();
                 this.bindEvents();
+                this.initBulkVarsModal();
+                this.initSlashVariablePalette();
                 this.initAutoSave();
                 this.initKeyboardShortcuts();
                 this.initHelpModal();
@@ -357,6 +359,19 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                     exportMenuBtn: document.getElementById('export-menu-btn'),
                     exportDropdownMenu: document.getElementById('export-dropdown-menu'),
                     cleanPastedHtmlBtn: document.getElementById('clean-pasted-html-btn'),
+                    bulkAddVarsBtn: document.getElementById('bulk-add-vars-btn'),
+                    bulkAddVarsPillBtn: document.getElementById('bulk-add-vars-pill-btn'),
+                    bulkVarsModal: document.getElementById('bulk-vars-modal'),
+                    closeBulkVarsModal: document.getElementById('close-bulk-vars-modal'),
+                    cancelBulkVarsBtn: document.getElementById('cancel-bulk-vars-btn'),
+                    submitBulkVarsBtn: document.getElementById('submit-bulk-vars-btn'),
+                    bulkVarsInput: document.getElementById('bulk-vars-input'),
+                    bulkVarsClearBtn: document.getElementById('bulk-vars-clear-btn'),
+                    insertVariableQuickBtn: document.getElementById('insert-variable-quick-btn'),
+                    slashPalette: document.getElementById('slash-variable-palette'),
+                    slashSearch: document.getElementById('slash-variable-search'),
+                    slashList: document.getElementById('slash-variable-list'),
+                    closeSlashPaletteBtn: document.getElementById('close-slash-palette-btn'),
                 };
             },
 
@@ -1548,6 +1563,308 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                     }
                 }
                 return Array.from(map.values());
+            },
+
+            initBulkVarsModal() {
+                if (!this.nodes.bulkVarsModal) return;
+
+                const openModal = () => {
+                    this.nodes.bulkVarsModal.classList.remove('hidden');
+                    if (this.nodes.bulkVarsInput) {
+                        this.nodes.bulkVarsInput.focus();
+                    }
+                };
+
+                const closeModal = () => {
+                    this.nodes.bulkVarsModal.classList.add('hidden');
+                };
+
+                if (this.nodes.bulkAddVarsBtn) {
+                    this.nodes.bulkAddVarsBtn.addEventListener('click', openModal);
+                }
+                if (this.nodes.bulkAddVarsPillBtn) {
+                    this.nodes.bulkAddVarsPillBtn.addEventListener('click', openModal);
+                }
+                if (this.nodes.closeBulkVarsModal) {
+                    this.nodes.closeBulkVarsModal.addEventListener('click', closeModal);
+                }
+                if (this.nodes.cancelBulkVarsBtn) {
+                    this.nodes.cancelBulkVarsBtn.addEventListener('click', closeModal);
+                }
+                if (this.nodes.bulkVarsClearBtn) {
+                    this.nodes.bulkVarsClearBtn.addEventListener('click', () => {
+                        if (this.nodes.bulkVarsInput) {
+                            this.nodes.bulkVarsInput.value = '';
+                            this.nodes.bulkVarsInput.focus();
+                        }
+                    });
+                }
+
+                // Preset buttons
+                const presets = {
+                    outreach: 'first_name=Alex\nlast_name=Taylor\ncompany=Acme Corp\njob_title=Head of Growth\nsender_name=Rohan Patel\nmeeting_link=https://cal.com/rohan',
+                    interview: 'candidate_name=Sarah Jenkins\nrole=Senior Software Engineer\ninterview_date=Thursday at 2:00 PM\nzoom_link=https://zoom.us/j/94827104\ninterviewer_name=Rohan Patel',
+                    ecommerce: 'customer_name=Jordan Reed\norder_id=#ORD-94821\nitem_name=Pro Wireless Noise-Cancelling Headphones\ndelivery_date=Tomorrow by 5 PM\ntracking_link=https://track.package.com/94821',
+                    saas: 'user_name=Alex\nworkspace_name=Acme Team\nplan_name=Pro Growth\ntrial_days_left=7\nupgrade_link=https://app.saas.com/upgrade'
+                };
+
+                this.nodes.bulkVarsModal.querySelectorAll('.bulk-preset-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const key = btn.dataset.preset;
+                        if (presets[key] && this.nodes.bulkVarsInput) {
+                            this.nodes.bulkVarsInput.value = presets[key];
+                            this.nodes.bulkVarsInput.focus();
+                        }
+                    });
+                });
+
+                if (this.nodes.submitBulkVarsBtn) {
+                    this.nodes.submitBulkVarsBtn.addEventListener('click', () => {
+                        const raw = this.nodes.bulkVarsInput ? this.nodes.bulkVarsInput.value.trim() : '';
+                        if (!raw) {
+                            this.showNotification('Please enter or select variables to add.', 'error');
+                            return;
+                        }
+
+                        if (window.VariableManager && typeof window.VariableManager.bulkAddVariables === 'function') {
+                            const result = window.VariableManager.bulkAddVariables(
+                                this.nodes.variablesContainer,
+                                raw,
+                                () => {
+                                    this.renderPreview();
+                                    this.renderSubjectLine();
+                                    this.saveToLocalStorage();
+                                }
+                            );
+
+                            closeModal();
+                            if (this.nodes.bulkVarsInput) this.nodes.bulkVarsInput.value = '';
+
+                            if (result.added > 0 || result.updated > 0) {
+                                this.showNotification(`Added ${result.added} variable${result.added !== 1 ? 's' : ''}${result.updated > 0 ? ` (updated ${result.updated})` : ''}!`);
+                            } else {
+                                this.showNotification('All variables already exist in the list.', 'info');
+                            }
+                        }
+                    });
+                }
+            },
+
+            initSlashVariablePalette() {
+                if (!this.nodes.slashPalette || !this.nodes.htmlInput) return;
+
+                let activeIndex = 0;
+                let currentMatches = [];
+                let triggerStartPos = -1;
+
+                const renderItems = (query = '') => {
+                    if (!this.nodes.slashList) return;
+                    const currentVars = typeof this.getVariables === 'function' ? this.getVariables() : new Map();
+                    currentMatches = window.VariableManager && typeof window.VariableManager.filterVariableMatches === 'function'
+                        ? window.VariableManager.filterVariableMatches(query, currentVars)
+                        : [];
+
+                    if (!currentMatches.length) {
+                        this.nodes.slashList.innerHTML = `
+                            <div class="p-3 text-center text-slate-400 text-xs">
+                                No matching variables or snippets found.<br>
+                                <span class="text-[11px] text-indigo-500 cursor-pointer hover:underline" id="slash-add-custom-var">+ Add as new variable</span>
+                            </div>
+                        `;
+                        const addCustom = this.nodes.slashList.querySelector('#slash-add-custom-var');
+                        if (addCustom) {
+                            addCustom.addEventListener('click', () => {
+                                const clean = query.replace(/[^a-zA-Z0-9_.-]/g, '');
+                                if (clean) {
+                                    this.addVariableRow(clean, '');
+                                    insertToken(`{{${clean}}}`);
+                                }
+                            });
+                        }
+                        return;
+                    }
+
+                    if (activeIndex >= currentMatches.length) activeIndex = 0;
+
+                    this.nodes.slashList.innerHTML = currentMatches.map((item, idx) => {
+                        const isSelected = idx === activeIndex;
+                        const badgeClass = item.type === 'active' ? 'active' : (item.type === 'spintax' ? 'spintax' : 'standard');
+                        return `
+                            <div class="slash-item ${isSelected ? 'selected' : ''}" data-index="${idx}" data-token="${item.token}">
+                                <div class="flex-1 min-w-0 pr-2">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-mono font-semibold text-slate-800 text-xs truncate">${item.token}</span>
+                                        <span class="slash-item-badge ${badgeClass}">${item.type}</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-400 truncate">${item.description || item.sampleValue}</div>
+                                </div>
+                                <i class="fas fa-arrow-turn-down text-slate-300 text-[10px] transform rotate-90"></i>
+                            </div>
+                        `;
+                    }).join('');
+
+                    this.nodes.slashList.querySelectorAll('.slash-item').forEach(el => {
+                        el.addEventListener('click', () => {
+                            const token = el.getAttribute('data-token');
+                            insertToken(token);
+                        });
+                        el.addEventListener('mouseenter', () => {
+                            const idx = parseInt(el.getAttribute('data-index'), 10);
+                            activeIndex = idx;
+                            highlightItem();
+                        });
+                    });
+                };
+
+                const highlightItem = () => {
+                    if (!this.nodes.slashList) return;
+                    this.nodes.slashList.querySelectorAll('.slash-item').forEach((el, idx) => {
+                        if (idx === activeIndex) {
+                            el.classList.add('selected');
+                            if (typeof el.scrollIntoView === 'function') {
+                                el.scrollIntoView({ block: 'nearest' });
+                            }
+                        } else {
+                            el.classList.remove('selected');
+                        }
+                    });
+                };
+
+                const openPalette = (query = '', type = '/', startPos = -1) => {
+                    triggerStartPos = startPos;
+                    activeIndex = 0;
+                    this.nodes.slashPalette.classList.remove('hidden');
+                    if (this.nodes.slashSearch) {
+                        this.nodes.slashSearch.value = query;
+                    }
+                    renderItems(query);
+                };
+
+                const closePalette = () => {
+                    this.nodes.slashPalette.classList.add('hidden');
+                    triggerStartPos = -1;
+                };
+
+                const insertToken = (token) => {
+                    const textarea = this.nodes.htmlInput;
+                    const cursor = textarea.selectionStart;
+                    const fullText = textarea.value;
+
+                    if (triggerStartPos !== -1 && triggerStartPos <= cursor) {
+                        const before = fullText.slice(0, triggerStartPos);
+                        const after = fullText.slice(cursor);
+                        textarea.value = before + token + after;
+                        const newPos = before.length + token.length;
+                        textarea.setSelectionRange(newPos, newPos);
+                    } else {
+                        const before = fullText.slice(0, cursor);
+                        const after = fullText.slice(cursor);
+                        textarea.value = before + token + after;
+                        const newPos = cursor + token.length;
+                        textarea.setSelectionRange(newPos, newPos);
+                    }
+
+                    closePalette();
+                    textarea.focus();
+                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                };
+
+                if (this.nodes.closeSlashPaletteBtn) {
+                    this.nodes.closeSlashPaletteBtn.addEventListener('click', closePalette);
+                }
+
+                if (this.nodes.insertVariableQuickBtn) {
+                    this.nodes.insertVariableQuickBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (this.nodes.slashPalette.classList.contains('hidden')) {
+                            openPalette('', '/', this.nodes.htmlInput.selectionStart);
+                        } else {
+                            closePalette();
+                        }
+                    });
+                }
+
+                if (this.nodes.slashSearch) {
+                    this.nodes.slashSearch.addEventListener('input', (e) => {
+                        activeIndex = 0;
+                        renderItems(e.target.value);
+                    });
+                    this.nodes.slashSearch.addEventListener('keydown', (e) => {
+                        if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            if (currentMatches.length) {
+                                activeIndex = (activeIndex + 1) % currentMatches.length;
+                                highlightItem();
+                            }
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            if (currentMatches.length) {
+                                activeIndex = (activeIndex - 1 + currentMatches.length) % currentMatches.length;
+                                highlightItem();
+                            }
+                        } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (currentMatches[activeIndex]) {
+                                insertToken(currentMatches[activeIndex].token);
+                            }
+                        } else if (e.key === 'Escape') {
+                            closePalette();
+                            this.nodes.htmlInput.focus();
+                        }
+                    });
+                }
+
+                this.nodes.htmlInput.addEventListener('input', () => {
+                    const cursor = this.nodes.htmlInput.selectionStart;
+                    const textBeforeCursor = this.nodes.htmlInput.value.slice(0, cursor);
+
+                    const match = textBeforeCursor.match(/(?:\/|{{)([\w.-]*)$/);
+                    if (match) {
+                        const matchedTrigger = match[0];
+                        const query = match[1];
+                        const type = matchedTrigger.startsWith('{{') ? '{{' : '/';
+                        const startPos = cursor - matchedTrigger.length;
+                        openPalette(query, type, startPos);
+                    } else {
+                        if (!this.nodes.slashPalette.classList.contains('hidden') && triggerStartPos !== -1) {
+                            closePalette();
+                        }
+                    }
+                });
+
+                this.nodes.htmlInput.addEventListener('keydown', (e) => {
+                    if (this.nodes.slashPalette.classList.contains('hidden')) return;
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (currentMatches.length) {
+                            activeIndex = (activeIndex + 1) % currentMatches.length;
+                            highlightItem();
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (currentMatches.length) {
+                            activeIndex = (activeIndex - 1 + currentMatches.length) % currentMatches.length;
+                            highlightItem();
+                        }
+                    } else if (e.key === 'Enter' || e.key === 'Tab') {
+                        if (currentMatches[activeIndex]) {
+                            e.preventDefault();
+                            insertToken(currentMatches[activeIndex].token);
+                        }
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        closePalette();
+                    }
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!this.nodes.slashPalette.classList.contains('hidden')) {
+                        if (!this.nodes.slashPalette.contains(e.target) && e.target !== this.nodes.insertVariableQuickBtn && !this.nodes.insertVariableQuickBtn?.contains(e.target)) {
+                            closePalette();
+                        }
+                    }
+                });
             },
 
             copyHtmlToClipboard() {

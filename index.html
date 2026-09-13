@@ -377,9 +377,14 @@
                         <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                             <i class="fas fa-sliders-h text-indigo-500"></i> Template Variables
                         </h2>
-                        <button id="auto-detect-vars-btn" class="text-xs font-semibold px-2.5 py-1 rounded-md text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all flex items-center gap-1 shadow-sm" title="Scan template text and subject for {{variables}}">
-                            <i class="fas fa-magic text-emerald-600"></i> Auto-Detect
-                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <button id="bulk-add-vars-btn" class="text-xs font-semibold px-2.5 py-1 rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-all flex items-center gap-1 shadow-xs cursor-pointer" title="Paste multiple variables or presets in bulk">
+                                <i class="fas fa-list-ul text-indigo-600"></i> <span class="hidden sm:inline">Add List</span><span class="sm:hidden">List</span>
+                            </button>
+                            <button id="auto-detect-vars-btn" class="text-xs font-semibold px-2.5 py-1 rounded-md text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all flex items-center gap-1 shadow-sm cursor-pointer" title="Scan template text and subject for {{variables}}">
+                                <i class="fas fa-magic text-emerald-600"></i> Auto-Detect
+                            </button>
+                        </div>
                     </div>
 
                     <div id="variables-container" class="space-y-2 mb-3">
@@ -390,6 +395,9 @@
                     <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
                         <button id="add-variable-btn" class="btn btn-secondary text-xs px-2.5 py-1.5 text-indigo-600 border-indigo-100 bg-indigo-50/50 hover:bg-indigo-50">
                             <i class="fas fa-plus mr-1"></i> Add Variable
+                        </button>
+                        <button id="bulk-add-vars-pill-btn" class="btn btn-secondary text-xs px-2.5 py-1.5 text-purple-700 border-purple-100 bg-purple-50/50 hover:bg-purple-100">
+                            <i class="fas fa-file-import mr-1"></i> Add List
                         </button>
                         <button id="save-template-btn" class="btn btn-secondary text-xs px-2.5 py-1.5 text-slate-700">
                             <i class="fas fa-save mr-1 text-emerald-600"></i> Save
@@ -455,6 +463,10 @@
                             <option value="divider">Section Divider</option>
                             <option value="complianceFooter">Compliance Footer</option>
                         </select>
+                        <button id="insert-variable-quick-btn" class="toolbar-btn text-indigo-700 bg-indigo-50/80 border border-indigo-200 hover:bg-indigo-100 flex items-center gap-1 px-2 cursor-pointer" aria-label="Insert Variable" title="Insert Variable (or type / or {{ in editor)">
+                            <span class="font-mono font-bold text-xs">{/}</span>
+                            <span class="text-xs font-semibold hidden sm:inline">Variable</span>
+                        </button>
                     </div>
 
                     <!-- Code Container with Action Buttons Header -->
@@ -488,13 +500,15 @@
                                             <i class="fas fa-code text-indigo-400 w-4"></i> Download HTML (.html)
                                         </button>
                                         <button id="export-txt-btn" class="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 cursor-pointer">
-                                            <i class="fas fa-file-alt text-emerald-400 w-4"></i> Plain Text (.txt)
+                                            <i class="fas fa-file-alt text-emerald-400 w-4"></i> Download Plain Text (.txt)
                                         </button>
-                                        <button id="export-eml-btn" class="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 cursor-pointer">
-                                            <i class="fas fa-envelope text-amber-400 w-4"></i> Test Email (.eml)
+                                        <button id="export-zip-btn" class="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 cursor-pointer">
+                                            <i class="fas fa-file-archive text-amber-400 w-4"></i> Download Campaign (.zip)
                                         </button>
-                                        <div class="border-t border-slate-800 my-1"></div>
-                                        <button id="copy-rendered-btn" class="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 cursor-pointer">
+                                        <button id="export-eml-btn" class="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 cursor-pointer border-t border-slate-800">
+                                            <i class="fas fa-envelope-open-text text-blue-400 w-4"></i> Open in Mail Client (.eml)
+                                        </button>
+                                        <button id="copy-rendered-btn" class="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 cursor-pointer border-t border-slate-800">
                                             <i class="fas fa-paste text-rose-400 w-4"></i> Copy Rendered Text
                                         </button>
                                     </div>
@@ -502,9 +516,33 @@
                             </div>
                         </div>
 
-                        <!-- Textarea -->
+                        <!-- Textarea with Floating Slash Variable Palette -->
                         <div class="relative min-h-[380px]">
-                            <textarea id="spam-checker--textarea" class="w-full h-full p-4 font-mono text-xs custom-scrollbar leading-relaxed bg-transparent text-slate-200 resize-y" style="min-height: 380px;"></textarea>
+                            <textarea id="spam-checker--textarea" class="w-full h-full p-4 font-mono text-xs custom-scrollbar leading-relaxed bg-transparent text-slate-200 resize-y" style="min-height: 380px;" placeholder="Write or paste your HTML email template here... Type / or {{ to quickly insert variables!"></textarea>
+
+                            <!-- Slash Command / Quick Variable Inserter Palette -->
+                            <div id="slash-variable-palette" class="hidden absolute top-2 left-4 z-50 w-80 max-w-[95%] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
+                                <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                                        <i class="fas fa-bolt text-indigo-500"></i>
+                                        <span>Insert Variable</span>
+                                    </div>
+                                    <button id="close-slash-palette-btn" class="text-[10px] text-slate-400 hover:text-slate-600 font-mono" title="Close menu (Esc)">Esc</button>
+                                </div>
+                                <div class="p-2 border-b border-slate-100 bg-white">
+                                    <div class="relative">
+                                        <i class="fas fa-search absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+                                        <input type="text" id="slash-variable-search" placeholder="Type to filter variables..." class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 font-mono">
+                                    </div>
+                                </div>
+                                <div id="slash-variable-list" class="max-h-60 overflow-y-auto custom-scrollbar divide-y divide-slate-100 text-xs">
+                                    <!-- Populated dynamically by Editor -->
+                                </div>
+                                <div class="px-3 py-1.5 bg-slate-50/90 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+                                    <span><kbd class="px-1 py-0.5 bg-slate-200 rounded font-mono">↑↓</kbd> navigate</span>
+                                    <span><kbd class="px-1 py-0.5 bg-slate-200 rounded font-mono">Enter</kbd> insert</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -583,53 +621,53 @@
                         </div>
 
                         <!-- Simulated Client Recipient Pill -->
-                        <div class="hidden sm:flex items-center gap-2 text-xs text-slate-600 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-xs">
-                            <div class="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
+                        <div class="hidden md:flex items-center gap-2 text-xs text-slate-600 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-xs max-w-[200px] truncate">
+                            <div class="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                                 <span id="sender-initial">R</span>
                             </div>
-                            <span class="font-medium text-slate-700">Rohan</span>
+                            <span class="font-medium text-slate-700 truncate">Rohan</span>
                             <span class="text-slate-300">|</span>
-                            <span class="text-slate-500 font-mono text-[11px]" id="recipient-email">recipient@example.com</span>
+                            <span class="text-slate-500 font-mono text-[11px] truncate" id="recipient-email">recipient@example.com</span>
                         </div>
 
                         <!-- Viewport Controls & Deliverability Badge -->
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center flex-wrap gap-1.5 justify-end">
                             <!-- Viewport Switcher -->
-                            <div class="flex items-center bg-slate-200/80 p-0.5 rounded-lg text-xs" role="group" aria-label="Device preview viewport">
-                                <button id="viewport-desktop" class="viewport-btn active px-2.5 py-1 text-xs font-semibold rounded-md transition-all text-slate-900" title="Desktop View (600px)">
-                                    <i class="fas fa-desktop mr-1"></i>Desktop
+                            <div class="flex items-center bg-slate-200/80 p-0.5 rounded-lg text-xs flex-shrink-0" role="group" aria-label="Device preview viewport">
+                                <button id="viewport-desktop" class="viewport-btn active px-2 py-1 text-xs font-semibold rounded-md transition-all text-slate-900" title="Desktop View (600px)">
+                                    <i class="fas fa-desktop sm:mr-1"></i><span class="hidden sm:inline">Desktop</span>
                                 </button>
-                                <button id="viewport-tablet" class="viewport-btn px-2.5 py-1 text-xs font-semibold rounded-md transition-all text-slate-600 hover:text-slate-900" title="Tablet View (768px)">
-                                    <i class="fas fa-tablet-alt mr-1"></i>Tablet
+                                <button id="viewport-tablet" class="viewport-btn px-2 py-1 text-xs font-semibold rounded-md transition-all text-slate-600 hover:text-slate-900" title="Tablet View (768px)">
+                                    <i class="fas fa-tablet-alt sm:mr-1"></i><span class="hidden sm:inline">Tablet</span>
                                 </button>
-                                <button id="viewport-mobile" class="viewport-btn px-2.5 py-1 text-xs font-semibold rounded-md transition-all text-slate-600 hover:text-slate-900" title="Mobile View (375px)">
-                                    <i class="fas fa-mobile-alt mr-1"></i>Mobile
+                                <button id="viewport-mobile" class="viewport-btn px-2 py-1 text-xs font-semibold rounded-md transition-all text-slate-600 hover:text-slate-900" title="Mobile View (375px)">
+                                    <i class="fas fa-mobile-alt sm:mr-1"></i><span class="hidden sm:inline">Mobile</span>
                                 </button>
                             </div>
 
                             <!-- Dark Mode Toggle -->
-                            <button id="preview-dark-toggle" class="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs shadow-xs" title="Toggle Dark Mode Simulation">
+                            <button id="preview-dark-toggle" class="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs shadow-xs flex-shrink-0" title="Toggle Dark Mode Simulation">
                                 <i class="fas fa-moon text-indigo-500"></i>
                             </button>
 
                             <!-- Spintax Randomizer Roll Button -->
-                            <button id="spintax-roll-btn" class="px-2.5 py-1 text-xs font-bold rounded-lg border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer" title="Roll / Randomize Spintax variations (e.g. {{Hi|Hey|Hello}})">
+                            <button id="spintax-roll-btn" class="px-2 py-1 text-xs font-bold rounded-lg border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all flex items-center gap-1 shadow-xs cursor-pointer flex-shrink-0" title="Roll / Randomize Spintax variations (e.g. {{Hi|Hey|Hello}})">
                                 <i id="spintax-dice-icon" class="fas fa-dice text-purple-600 text-sm"></i>
-                                <span class="hidden sm:inline">Roll</span>
+                                <span class="hidden md:inline">Roll</span>
                                 <span id="spintax-count-badge" class="hidden text-[10px] px-1.5 py-0.2 rounded-full bg-purple-200/80 text-purple-900 font-semibold" title="Total variations possible">1x</span>
                             </button>
 
                             <!-- Deliverability Health Score Badge -->
-                            <button id="health-score-badge" class="px-2.5 py-1 text-xs font-bold rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all flex items-center gap-1 shadow-xs cursor-pointer" title="Deliverability Health Score - Click for diagnostics">
+                            <button id="health-score-badge" class="px-2 py-1 text-xs font-bold rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all flex items-center gap-1 shadow-xs cursor-pointer flex-shrink-0" title="Deliverability Health Score - Click for diagnostics">
                                 <i class="fas fa-shield-alt text-emerald-600"></i>
                                 <span id="health-score-val">100/100</span>
-                                <span id="health-score-grade" class="hidden sm:inline">Great</span>
+                                <span id="health-score-grade" class="hidden lg:inline">Great</span>
                             </button>
 
                             <!-- Pre-Flight Deliverability Inspector Button -->
-                            <button id="preflight-inspector-btn" class="px-2.5 py-1 text-xs font-bold rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-all flex items-center gap-1 shadow-xs cursor-pointer" title="Pre-Flight Deliverability Inspector">
+                            <button id="preflight-inspector-btn" class="px-2 py-1 text-xs font-bold rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-all flex items-center gap-1 shadow-xs cursor-pointer flex-shrink-0" title="Pre-Flight Deliverability Inspector">
                                 <i class="fas fa-clipboard-check text-indigo-600"></i>
-                                <span class="hidden sm:inline">Pre-Flight</span>
+                                <span class="hidden md:inline">Pre-Flight</span>
                             </button>
                         </div>
                     </div>
@@ -1025,6 +1063,71 @@
                 <button id="close-starters-btn" class="btn btn-secondary text-xs py-1.5 px-4">
                     Close
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Add Variables Modal -->
+    <div id="bulk-vars-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center hidden z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="bulk-vars-title">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 flex flex-col">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 text-indigo-600 text-base">
+                        <i class="fas fa-list-ul"></i>
+                    </div>
+                    <div>
+                        <h2 id="bulk-vars-title" class="text-base font-bold text-slate-900">Add List of Variables</h2>
+                        <p class="text-[11px] text-slate-500">Paste multiple variables at once or pick a quick preset</p>
+                    </div>
+                </div>
+                <button id="close-bulk-vars-modal" class="text-slate-400 hover:text-slate-600 text-sm p-1 cursor-pointer">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="pt-3">
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Quick Presets:</label>
+                <div class="flex flex-wrap gap-1.5 mb-3">
+                    <button type="button" class="bulk-preset-btn text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-medium border border-slate-200 transition-all cursor-pointer" data-preset="outreach">
+                        🎯 Cold Outreach
+                    </button>
+                    <button type="button" class="bulk-preset-btn text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-medium border border-slate-200 transition-all cursor-pointer" data-preset="interview">
+                        💼 Interview
+                    </button>
+                    <button type="button" class="bulk-preset-btn text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-medium border border-slate-200 transition-all cursor-pointer" data-preset="ecommerce">
+                        🛍️ E-Commerce
+                    </button>
+                    <button type="button" class="bulk-preset-btn text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-medium border border-slate-200 transition-all cursor-pointer" data-preset="saas">
+                        🚀 SaaS / Tech
+                    </button>
+                </div>
+            </div>
+
+            <!-- Textarea -->
+            <div class="py-2">
+                <label for="bulk-vars-input" class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    Variables List (comma or line separated):
+                </label>
+                <textarea id="bulk-vars-input" class="w-full h-32 p-3 text-xs font-mono border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 custom-scrollbar resize-none bg-slate-50/50" placeholder="first_name=Alex&#10;last_name=Smith&#10;company=Acme Inc&#10;job_title=Lead Engineer&#10;&#10;or simply:&#10;first_name, last_name, company, phone, date"></textarea>
+                <p class="text-[11px] text-slate-400 mt-1">
+                    Supports <code>key=value</code>, <code>key:value</code>, or simple names. Surrounding <code>{{ }}</code> are automatically cleaned.
+                </p>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <button type="button" id="bulk-vars-clear-btn" class="text-xs text-rose-600 hover:underline cursor-pointer">
+                    Clear Text
+                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="cancel-bulk-vars-btn" class="btn btn-secondary text-xs py-1.5 px-3 cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="button" id="submit-bulk-vars-btn" class="btn btn-primary text-xs py-1.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-sm cursor-pointer">
+                        <i class="fas fa-plus mr-1"></i> Add Variables
+                    </button>
+                </div>
             </div>
         </div>
     </div>
