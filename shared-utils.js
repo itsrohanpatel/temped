@@ -763,7 +763,6 @@ const PreFlightInspector = {
 
         const checksList = [
             { id: 'size', name: 'Gmail 102KB Cutoff', ...sizeCheck },
-            { id: 'compliance', name: 'CAN-SPAM & GDPR', ...complianceCheck },
             { id: 'subject', name: 'Subject Line Health', status: subjectStatus, message: subjectMsg },
             { id: 'preheader', name: 'Preheader Preview Text', status: preheaderStatus, message: preheaderMsg },
             { id: 'altText', name: 'Image Accessibility & Alt Text', ...altCheck },
@@ -773,7 +772,6 @@ const PreFlightInspector = {
 
         // Attach property getters to allow checks.size and checks.filter
         checksList.size = sizeCheck;
-        checksList.compliance = complianceCheck;
         checksList.altText = altCheck;
         checksList.links = linksCheck;
         checksList.ratio = ratioCheck;

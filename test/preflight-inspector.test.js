@@ -220,7 +220,16 @@ describe('PreFlightInspector Deliverability Checks', () => {
             });
             expect(report.verdict).toBe('ready');
             expect(report.checks.size).toBeDefined();
-            expect(report.checks.compliance).toBeDefined();
+            expect(report.checks.altText).toBeDefined();
+            expect(report.checks.find(c => c.id === 'compliance')).toBeUndefined();
+        });
+
+        it('should not fail preflight when unsubscribe or postal address is absent (CAN-SPAM removed from preflight)', () => {
+            const emailWithoutFooter = '<p>Hi team, here is the sprint review doc: <a href="https://example.com/doc">Review</a></p>';
+            const report = PreFlightInspector.runAllChecks('Sprint Review Completed', 'Review notes inside', emailWithoutFooter);
+            expect(report.verdict).toBe('ready');
+            expect(report.overallStatus).toBe('ready');
+            expect(report.checks.find(c => c.id === 'compliance')).toBeUndefined();
         });
 
         it('should flag empty, short, and overly long subject lines', () => {

@@ -810,7 +810,6 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 };
 
                 updateCard('size', 'preflight-badge-size', 'preflight-msg-size', 'preflight-check-size');
-                updateCard('compliance', 'preflight-badge-compliance', 'preflight-msg-compliance', 'preflight-check-compliance');
                 updateCard('altText', 'preflight-badge-alt', 'preflight-msg-alt', 'preflight-check-alt');
                 updateCard('links', 'preflight-badge-links', 'preflight-msg-links', 'preflight-check-links');
                 updateCard('ratio', 'preflight-badge-ratio', 'preflight-msg-ratio', 'preflight-check-ratio');

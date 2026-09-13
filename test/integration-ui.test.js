@@ -39,12 +39,12 @@ describe('TempEd Pro Production Suite UI Integration Tests', () => {
             expect(indexHtml).toMatch(/preflight-inspector-btn[\s\S]*?Pre-Flight/);
         });
 
-        it('includes preflight-modal with all 5 check cards and summary banner', () => {
+        it('includes preflight-modal with check cards and summary banner', () => {
             expect(indexHtml).toContain('id="preflight-modal"');
             expect(indexHtml).toContain('id="preflight-checks-ratio"');
             expect(indexHtml).toContain('id="preflight-overall-badge"');
             expect(indexHtml).toContain('id="preflight-check-size"');
-            expect(indexHtml).toContain('id="preflight-check-compliance"');
+            expect(indexHtml).not.toContain('id="preflight-check-compliance"');
             expect(indexHtml).toContain('id="preflight-check-alt"');
             expect(indexHtml).toContain('id="preflight-check-links"');
             expect(indexHtml).toContain('id="preflight-check-ratio"');
