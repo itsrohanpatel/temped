@@ -90,8 +90,18 @@ This document tracks all bugs, usability issues, and security vulnerabilities id
   2. Implemented `GroqService.cleanOutput` to strip `<think>...</think>` internal reasoning traces before returning to editor workflows.
   3. Redesigned all default prompt templates (`optimize`, `suggest`, `tone`, `subject`, `rewrite`) with strict role-based framing, markdown-free HTML enforcement, raw JSON array enforcement, and spam-safe wording constraints.
 
+### 15. Tailwind CSS Variables (`--tw-*`), Utility Classes & Semibold Spans Paste Sanitization (#20)
+- **Previous Issue**: When copying and pasting HTML from modern web applications styled with Tailwind CSS (such as web email previews, cold outreach snippets, or SaaS portals), the browser clipboard serialized dozens of computed CSS custom properties (`--tw-border-spacing-y`, `--tw-translate-x`, `--tw-ring-color`, `--tw-shadow`, etc.) on every single paragraph and list element. A short email snippet ballooned from 700 bytes to over 7.3 KB (with 400+ `--tw-*` declarations), causing Gmail clipping and deliverability warnings. Furthermore, clicking "Clean Pasted HTML" did not detect direct custom property declarations or utility classes (`mb-3 text-gray-700 leading-relaxed`), reporting "HTML is already clean", and `<span class="font-semibold text-gray-900">` elements lost visual bolding when styled spans were removed.
+- **Fix**:
+  1. Updated `cleanPastedHtml(html)` in `shared-utils.js` and `js/shared/shared-utils.js` to convert `font-semibold` / `font-bold` spans and `font-weight: 600/700/bold` inline spans into semantic `<strong>$1</strong>` tags first, preserving emphasis.
+  2. Stripped all CSS custom properties (`--[a-zA-Z0-9_-]+:\s*[^;"]*;?`) and property usages (`var(--*)`).
+  3. Filtered out Tailwind utility classes (`mb-*`, `text-*`, `leading-*`, `font-*`, `space-*`, `list-*`, `rounded-*`, etc.) from `class="..."`, stripping the attribute entirely if only utilities existed.
+  4. Normalized `style="..."` attributes by removing empty styles and trailing semicolons.
+  5. Unwrapped redundant empty spans and simplified nested list paragraph structures.
+  6. Updated `js/editor/editor-app.js` paste handler, `autoDetectVariables`, and `removeFormat` command to recognize `--tw-` signatures and auto-trigger clean sanitization.
+
 ---
 
 ## 🧪 Verification
-All resolutions are verified by 202 automated Vitest unit and integration tests across 16 test files with zero failures.
+All resolutions are verified by 203 automated Vitest unit and integration tests across 16 test files with zero failures.
 

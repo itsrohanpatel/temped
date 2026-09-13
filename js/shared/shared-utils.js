@@ -299,16 +299,27 @@ const EmailEditorUtils = {
         // 3. Unwrap custom web components / markdown nodes (e.g., Gemini's <ms-cmark-node>)
         clean = clean.replace(/<\/?(?:ms-cmark-node|ng-container|c-wiz)[^>]*>/gi, '');
 
-        // 4. Remove Angular & web framework component attributes & classes
+        // 4. Convert bold/semibold spans to semantic <strong> before stripping classes/spans
+        clean = clean.replace(/<span\b[^>]*\bclass="[^"]*\b(?:font-(?:semibold|bold))\b[^"]*"[^>]*>([\s\S]*?)<\/span>/gi, '<strong>$1</strong>');
+        clean = clean.replace(/<span\b[^>]*\bstyle="[^"]*font-weight:\s*(?:600|700|bold)[^"]*"[^>]*>([\s\S]*?)<\/span>/gi, '<strong>$1</strong>');
+
+        // 5. Strip all CSS custom properties (--tw-*, --color-*, etc.) and property usages (var(--*))
+        clean = clean.replace(/--[a-zA-Z0-9_-]+:\s*[^;"]*;?/gi, '');
+        clean = clean.replace(/[-a-zA-Z0-9]+:\s*var\(--[^)]+\);?/gi, '');
+
+        // 6. Remove Angular & web framework component attributes & classes
         clean = clean.replace(/\s+_ngcontent-[a-zA-Z0-9_-]+(?:="[^"]*")?/gi, '');
         clean = clean.replace(/\s+_nghost-[a-zA-Z0-9_-]+(?:="[^"]*")?/gi, '');
         clean = clean.replace(/\s+class="[^"]*ng-star-inserted[^"]*"/gi, '');
-        clean = clean.replace(/\s+class=""/gi, '');
 
-        // 5. Strip web CSS custom properties / variables (e.g. color: var(--color-text);) - invalid in email clients
-        clean = clean.replace(/[-a-zA-Z0-9]+:\s*var\(--[^)]+\);?/gi, '');
+        // 7. Strip Tailwind utility classes from class attributes
+        clean = clean.replace(/\s+class="([^"]*)"/gi, (match, classList) => {
+            const classes = classList.split(/\s+/).filter(Boolean);
+            const nonTailwind = classes.filter(c => !/^(?:[mpt][trblxy]?-[0-9.]+|text-(?:gray|slate|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|white|black)(?:-[0-9]+)?|leading-(?:none|tight|snug|normal|relaxed|loose)|font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black)|space-[xy](?:-reverse)?(?:-[0-9.]+)?|list-(?:none|disc|decimal)|items-[a-z]+|justify-[a-z]+|flex|grid|gap-[0-9.]+|rounded(?:-[a-z0-9]+)?|shadow(?:-[a-z0-9]+)?|border(?:-[a-z0-9]+)?|w-[a-z0-9]+|max-w-[a-z0-9]+|min-w-[a-z0-9]+)$/.test(c));
+            return nonTailwind.length > 0 ? ` class="${nonTailwind.join(' ')}"` : '';
+        });
 
-        // 6. Strip web dark-mode backgrounds, web text colors, and tap highlight artifacts
+        // 8. Strip web dark-mode backgrounds, web text colors, and tap highlight artifacts
         clean = clean.replace(/background-color:\s*(?:rgb|rgba|hsl|hsla)\([^)]+\);?/gi, '');
         clean = clean.replace(/background-color:\s*#(?:1[0-9a-f]{5}|2[0-9a-f]{5}|3[0-9a-f]{5}|0[0-9a-f]{5}|1[0-9a-f]{2}|2[0-9a-f]{2}|3[0-9a-f]{2}|000);?/gi, '');
         clean = clean.replace(/color:\s*(?:rgb|rgba)\(\s*(?:2[0-5][0-9]|19[0-9]|255)\s*,\s*(?:2[0-5][0-9]|19[0-9]|255)\s*,\s*(?:2[0-5][0-9]|19[0-9]|255)[^)]*\);?/gi, '');
@@ -316,11 +327,21 @@ const EmailEditorUtils = {
         clean = clean.replace(/font-optical-sizing:\s*[^;"]+;?/gi, '');
         clean = clean.replace(/display:\s*contents;?/gi, '');
 
-        // 7. Clean leftover empty style attributes
+        // 9. Clean style attributes (remove empty or pure whitespace/semicolons)
+        clean = clean.replace(/\s+style="([^"]*)"/gi, (match, styles) => {
+            const cleanedStyles = styles
+                .split(';')
+                .map(s => s.trim())
+                .filter(s => s && !s.startsWith('--'))
+                .join('; ');
+            return cleanedStyles ? ` style="${cleanedStyles};"` : '';
+        });
+
+        // 10. Clean leftover empty style and class attributes
         clean = clean.replace(/\s+style="\s*"/gi, '');
         clean = clean.replace(/\s+class="\s*"/gi, '');
 
-        // 8. Unwrap redundant spans that have empty style or no attributes
+        // 11. Unwrap redundant spans that have empty style or no attributes
         for (let i = 0; i < 5; i++) {
             clean = clean.replace(/<span\s*>([\s\S]*?)<\/span>/gi, '$1');
             clean = clean.replace(/<span\s+style="\s*"\s*>([\s\S]*?)<\/span>/gi, '$1');
@@ -328,11 +349,12 @@ const EmailEditorUtils = {
             clean = clean.replace(/<span\b[^>]*>\s*<\/span>/gi, '');
         }
 
-        // 9. Simplify list item nested paragraphs (e.g. <li><p>Text</p></li> -> <li>Text</li>)
+        // 12. Simplify list item nested paragraphs (e.g. <li><p>Text</p></li> -> <li>Text</li>)
         clean = clean.replace(/<li\b[^>]*>\s*<p\b[^>]*>([\s\S]*?)<\/p>\s*<\/li>/gi, '<li>$1</li>');
 
-        // 10. Clean any newly exposed empty style attributes
+        // 13. Clean any newly exposed empty style or class attributes
         clean = clean.replace(/\s+style="\s*"/gi, '');
+        clean = clean.replace(/\s+class="\s*"/gi, '');
 
         return clean.trim();
     },

@@ -392,6 +392,25 @@ describe('EmailEditorUtils Core Tests', () => {
             expect(clean).toContain('https://www.rkhrm.com/');
             expect(clean).toContain('RK HR Management&nbsp;| Recruitment Agency');
         });
+
+        it('cleanPastedHtml strips all Tailwind CSS variables (--tw-*), utility classes, and converts semibold spans', () => {
+            const tailwindSnippet = `<p class="mb-3 text-gray-700 leading-relaxed" style="--tw-border-spacing-y: 0; --tw-translate-x: 0; --tw-translate-y: 0; --tw-rotate: 0; --tw-skew-x: 0; --tw-skew-y: 0; --tw-scale-x: 1; --tw-scale-y: 1; --tw-pan-x: ; --tw-pan-y: ; margin: 0px 0px 0.75rem; line-height: 1.625; --tw-text-opacity: 1; color: rgb(55, 65, 81); font-size: 12px;">Hi {{full_name}},</p><p class="mb-3 text-gray-700 leading-relaxed" style="--tw-border-spacing-y: 0; margin: 0px 0px 0.75rem; line-height: 1.625; color: rgb(55, 65, 81); font-size: 12px;"><span class="font-semibold text-gray-900" style="--tw-border-spacing-y: 0; color: rgb(17, 24, 39);">How we deliver:</span></p><ul class="list-disc ml-6 mb-3 space-y-1" style="--tw-border-spacing-y: 0; margin: 0px 0px 0.75rem 1.5rem; padding: 0px; color: rgb(51, 65, 81); font-size: 12px;"><li class="text-gray-700" style="--tw-border-spacing-y: 0; color: rgb(55, 65, 81);"><span class="font-semibold text-gray-900" style="color: rgb(17, 24, 39);">Speed:</span> Qualified CVs delivered within 72 hours.</li></ul><p class="mb-3 text-gray-700 leading-relaxed" style="margin: 0px 0px 0.75rem; font-size: 12px;"><span class="font-semibold text-gray-900" style="color: rgb(17, 24, 39);">Abhishek Agarwal</span></p><p class="mb-3 text-gray-700 leading-relaxed" style="margin: 0px 0px 0.75rem; font-size: 12px;">https://www.hireologist.com/</p>`;
+
+            const cleaned = utils.cleanPastedHtml(tailwindSnippet);
+
+            // Must completely eliminate Tailwind variables and utility classes
+            expect(cleaned).not.toContain('--tw');
+            expect(cleaned).not.toContain('class="mb-3');
+            expect(cleaned).not.toContain('class="font-semibold');
+            expect(cleaned).not.toContain('space-y-1');
+            // Must convert semibold spans to semantic strong tags
+            expect(cleaned).toContain('<strong>How we deliver:</strong>');
+            expect(cleaned).toContain('<strong>Speed:</strong>');
+            expect(cleaned).toContain('<strong>Abhishek Agarwal</strong>');
+            // Must preserve all variables and text
+            expect(cleaned).toContain('Hi {{full_name}},');
+            expect(cleaned).toContain('https://www.hireologist.com/');
+        });
     });
 });
 

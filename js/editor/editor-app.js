@@ -378,6 +378,8 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                         text.includes('ng-star-inserted') ||
                         text.includes('rgb(38, 45, 61)') ||
                         text.includes('var(--') ||
+                        text.includes('--tw-') ||
+                        text.includes('--tw') ||
                         /=\s*["']{2}/.test(text) ||
                         /\\"[^"]*\\"/.test(text) ||
                         ((text.trim().startsWith('"') && text.trim().endsWith('"') && (text.includes('<') || text.includes('\n'))) ||
@@ -1103,8 +1105,8 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                      this.nodes.emailPreview.focus();
                      const selection = window.getSelection();
                      const html = this.nodes.emailPreview.innerHTML;
-                     // Detect common messy patterns from pasted content (Angular, Word, etc.)
-                     const isMessy = html.includes('ms-cmark-node') || html.includes('_ngcontent') || html.includes('bis_skin_checked') || html.includes('mso-');
+                     // Detect common messy patterns from pasted content (Angular, Word, Tailwind, etc.)
+                     const isMessy = html.includes('ms-cmark-node') || html.includes('_ngcontent') || html.includes('bis_skin_checked') || html.includes('mso-') || html.includes('--tw-');
 
                      if (selection.rangeCount > 0 && !selection.isCollapsed) {
                          // Clean specific selection
@@ -1384,7 +1386,7 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
 
             autoDetectVariables() {
                 const raw = this.nodes.htmlInput ? this.nodes.htmlInput.value : '';
-                if (raw && (raw.startsWith('"') || raw.startsWith("'") || raw.includes('style=""') || raw.includes('var(--'))) {
+                if (raw && (raw.startsWith('"') || raw.startsWith("'") || raw.includes('style=""') || raw.includes('var(--') || raw.includes('--tw-'))) {
                     if (window.EmailEditorUtils?.cleanPastedHtml) {
                         const cleaned = window.EmailEditorUtils.cleanPastedHtml(raw);
                         if (cleaned !== raw) {
