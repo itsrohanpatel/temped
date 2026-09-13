@@ -4,7 +4,7 @@
   "description": "Production-ready, client-side email template editor with real-time deliverability health scoring, multi-device preview, dark mode simulation, dynamic fallbacks, and Gemini AI optimizations.",
   "private": true,
   "type": "module",
-  "homepage": "https://github.com/itsrohanpatel/temped",
+  "homepage": "https://itsrohanpatel.github.io/temped/",
   "repository": {
     "type": "git",
     "url": "https://github.com/itsrohanpatel/temped.git"
