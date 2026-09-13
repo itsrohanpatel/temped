@@ -1309,12 +1309,12 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 const safeName = window.EmailEditorUtils ? window.EmailEditorUtils.escapeAttr(name) : String(name).replace(/"/g, '&quot;');
                 const safeValue = window.EmailEditorUtils ? window.EmailEditorUtils.escapeAttr(value) : String(value).replace(/"/g, '&quot;');
                 const row = document.createElement('div');
-                row.className = 'flex items-center space-x-2 variable-row';
+                row.className = 'flex items-center space-x-1.5 variable-row';
                 row.innerHTML = `
-                    <input type="text" value="${safeName}" placeholder="Variable Name" class="variable-name input-field w-1/3 text-sm">
-                    <span class="text-slate-400">=</span>
-                    <input type="text" value="${safeValue}" placeholder="Value" class="variable-value input-field flex-grow text-sm">
-                    <button class="remove-variable-btn text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full">
+                    <input type="text" value="${safeName}" placeholder="Variable" title="${safeName}" class="variable-name input-field flex-1 min-w-0 text-xs sm:text-sm font-medium font-mono text-slate-800">
+                    <span class="text-slate-400 text-xs font-semibold px-0.5">=</span>
+                    <input type="text" value="${safeValue}" placeholder="Value" title="${safeValue || 'Value'}" class="variable-value input-field flex-1 min-w-0 text-xs sm:text-sm">
+                    <button class="remove-variable-btn text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full flex-shrink-0" title="Remove variable">
                         <i class="fas fa-trash-alt fa-sm"></i>
                     </button>
                 `;
@@ -1346,23 +1346,39 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     return;
                 }
 
+                const SAMPLE_DEFAULTS = {
+                    full_name: 'Rahul',
+                    first_name: 'Rahul',
+                    last_name: 'Sharma',
+                    name: 'Rahul',
+                    company_name: 'Infosys',
+                    company: 'Infosys',
+                    'sender-name': 'Rohan Patel',
+                    sender_name: 'Rohan Patel',
+                    sender: 'Rohan Patel',
+                    email: 'recipient@example.com',
+                    role: 'Recruiter',
+                    date: new Date().toLocaleDateString('en-GB')
+                };
+
                 const existingVars = this.getVariables();
                 let addedCount = 0;
 
                 defs.forEach(def => {
+                    const fallbackVal = def.defaultValue || SAMPLE_DEFAULTS[def.name.toLowerCase()] || '';
                     if (!existingVars.has(def.name)) {
-                        this.addVariableRow(def.name, def.defaultValue || '');
-                        existingVars.set(def.name, def.defaultValue || '');
+                        this.addVariableRow(def.name, fallbackVal);
+                        existingVars.set(def.name, fallbackVal);
                         addedCount++;
-                    } else if (def.defaultValue && !existingVars.get(def.name)) {
+                    } else if (fallbackVal && !existingVars.get(def.name)) {
                         this.nodes.variablesContainer.querySelectorAll('.variable-row').forEach(row => {
                             const nameInput = row.querySelector('.variable-name');
                             const valInput = row.querySelector('.variable-value');
                             if (nameInput && valInput && nameInput.value.trim() === def.name && !valInput.value) {
-                                valInput.value = def.defaultValue;
+                                valInput.value = fallbackVal;
                             }
                         });
-                        existingVars.set(def.name, def.defaultValue);
+                        existingVars.set(def.name, fallbackVal);
                     }
                 });
 

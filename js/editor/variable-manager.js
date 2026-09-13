@@ -30,12 +30,12 @@
             const safeName = window.EmailEditorUtils ? window.EmailEditorUtils.escapeAttr(name) : String(name).replace(/"/g, '&quot;');
             const safeValue = window.EmailEditorUtils ? window.EmailEditorUtils.escapeAttr(value) : String(value).replace(/"/g, '&quot;');
             const row = document.createElement('div');
-            row.className = 'flex items-center space-x-2 variable-row';
+            row.className = 'flex items-center space-x-1.5 variable-row';
             row.innerHTML = `
-                <input type="text" value="${safeName}" placeholder="Variable Name" class="variable-name input-field w-1/3 text-sm">
-                <span class="text-slate-400">=</span>
-                <input type="text" value="${safeValue}" placeholder="Value" class="variable-value input-field flex-grow text-sm">
-                <button class="remove-variable-btn text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full" title="Remove variable">
+                <input type="text" value="${safeName}" placeholder="Variable" title="${safeName}" class="variable-name input-field flex-1 min-w-0 text-xs sm:text-sm font-medium font-mono text-slate-800">
+                <span class="text-slate-400 text-xs font-semibold px-0.5">=</span>
+                <input type="text" value="${safeValue}" placeholder="Value" title="${safeValue || 'Value'}" class="variable-value input-field flex-1 min-w-0 text-xs sm:text-sm">
+                <button class="remove-variable-btn text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full flex-shrink-0" title="Remove variable">
                     <i class="fas fa-trash-alt fa-sm"></i>
                 </button>
             `;
@@ -140,7 +140,8 @@
                 if (wrapPills) {
                     const safeToken = window.EmailEditorUtils ? window.EmailEditorUtils.escapeAttr(rawToken) : rawToken.replace(/"/g, '&quot;');
                     const safeKey = window.EmailEditorUtils ? window.EmailEditorUtils.escapeAttr(key) : key.replace(/"/g, '&quot;');
-                    return `<span class="font-semibold text-blue-600" data-variable="${safeKey}" data-original-token="${safeToken}" contenteditable="false">${resolved}</span>`;
+                    const displayVal = resolved !== '' ? resolved : `{{${key}}}`;
+                    return `<span class="font-semibold text-blue-600" data-variable="${safeKey}" data-original-token="${safeToken}" contenteditable="false">${displayVal}</span>`;
                 }
                 return resolved;
             });
