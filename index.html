@@ -43,6 +43,56 @@
             box-shadow: 0 0 0 2px var(--color-indigo-500);
         }
 
+        /* Email Preview Standard Typography & Spacing (matches real email clients like Gmail & Outlook) */
+        #email-preview p,
+        .email-preview-content p {
+            margin-top: 0;
+            margin-bottom: 1em;
+            line-height: 1.6;
+        }
+        #email-preview p:last-child,
+        .email-preview-content p:last-child {
+            margin-bottom: 0;
+        }
+        #email-preview h1, #email-preview h2, #email-preview h3, #email-preview h4, #email-preview h5, #email-preview h6,
+        .email-preview-content h1, .email-preview-content h2, .email-preview-content h3, .email-preview-content h4, .email-preview-content h5, .email-preview-content h6 {
+            margin-top: 1.25em;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        #email-preview h1, .email-preview-content h1 { font-size: 1.5rem; }
+        #email-preview h2, .email-preview-content h2 { font-size: 1.25rem; }
+        #email-preview h3, .email-preview-content h3 { font-size: 1.125rem; }
+        #email-preview ul, #email-preview ol,
+        .email-preview-content ul, .email-preview-content ol {
+            margin-top: 0.5em;
+            margin-bottom: 1em;
+            padding-left: 1.5rem;
+        }
+        #email-preview ul, .email-preview-content ul { list-style-type: disc; }
+        #email-preview ol, .email-preview-content ol { list-style-type: decimal; }
+        #email-preview li, .email-preview-content li {
+            margin-bottom: 0.25em;
+        }
+        #email-preview blockquote, .email-preview-content blockquote {
+            border-left: 3px solid var(--color-slate-300);
+            padding-left: 1rem;
+            margin: 1em 0;
+            color: var(--color-slate-600);
+            font-style: italic;
+        }
+        #email-preview hr, .email-preview-content hr {
+            border: 0;
+            border-top: 1px solid var(--color-slate-200);
+            margin: 1.5em 0;
+        }
+        #email-preview table, .email-preview-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1em;
+        }
+
         /* Toolbar button styling */
         .toolbar-btn {
             background: transparent;

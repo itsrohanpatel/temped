@@ -25,6 +25,7 @@ This document tracks all bugs, usability issues, and security vulnerabilities id
 | **#15** | Editor / UX | 🔴 High | HighlightWithinTextarea scroll and prototype binding crash | **Resolved** (Implemented missing `handleScroll` and `blockContainerScroll` prototype methods) | `test/spam-engine.test.js` |
 | **#16** | Diagnostics / UI | 🟡 Medium | Health score badge had no click listener & preflight size was `(undefined)` | **Resolved** (Wired health modal show/hide listeners and provided `formattedSize` from checkHtmlSize) | `test/editor-app.test.js`, `test/preflight-inspector.test.js` |
 | **#17** | AI / Orchestration | 🔴 High | AI Assistant ignored pre-rendered prompts and explicit temperatures | **Resolved** (Updated `generateWithFallback` to honor explicit `prompt`, `...variables`, and `temperature`) | `test/ai-assistant.test.js` |
+| **#18** | Editor / Features | 🔴 High | Unwired preheader input, viewport switchers, dark mode toggle, and quick copy toolbar buttons | **Resolved** (Added nodes to `queryNodes`, wired listeners, preheader storage/preflight passing, and typography rules) | `test/editor-app.test.js` |
 
 ---
 
@@ -78,7 +79,11 @@ This document tracks all bugs, usability issues, and security vulnerabilities id
 - **Previous Issue**: Deliverability badge tooltip invited clicking for diagnostics but lacked click listeners; Preflight badge rendered `(undefined)` for size.
 - **Fix**: Implemented `showHealthModal` and `hideHealthModal` event handlers on `#health-score-badge`, and added `formattedSize` property to `PreFlightInspector.checkHtmlSize`.
 
+### 13. Preheader Persistence, Viewport Switcher, Dark Mode & Quick Copy Toolbar Wiring (#18)
+- **Previous Issue**: `#preheader-input` was missing from `queryNodes()`, wasn't passed into PreFlightInspector, and wasn't persisted to localStorage; `#viewport-desktop/tablet/mobile`, `#preview-dark-toggle`, `#copy-subject-btn`, and `#copy-text-btn` lacked event listeners.
+- **Fix**: Added nodes to `queryNodes()`, wired input & click event handlers, persisted preheader to storage, passed preheader to PreFlight checks, and added email client preview typography rules.
+
 ---
 
 ## 🧪 Verification
-All resolutions are verified by 184 automated Vitest unit and integration tests across 16 test files with zero failures.
+All resolutions are verified by 199 automated Vitest unit and integration tests across 16 test files with zero failures.

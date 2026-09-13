@@ -341,17 +341,25 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     autoDetectVarsBtn: document.getElementById('auto-detect-vars-btn'),
                     htmlInput: document.getElementById('spam-checker--textarea'),
                     emailPreview: document.getElementById('email-preview'),
+                    previewContainer: document.getElementById('email-preview-container'),
                     subjectLineInput: document.getElementById('subject-line-input'),
                     subjectPreviewText: document.getElementById('subject-preview-text'),
+                    preheaderInput: document.getElementById('preheader-input'),
                     recipientEmail: document.getElementById('recipient-email'),
                     copyHtmlBtn: document.getElementById('copy-html-btn'),
                     copyFeedback: document.getElementById('copy-feedback'),
+                    copySubjectBtn: document.getElementById('copy-subject-btn'),
+                    copyTextBtn: document.getElementById('copy-text-btn'),
                     senderInitial: document.getElementById('sender-initial'),
                     toolbar: document.getElementById('toolbar'),
                     insertComponentSelect: document.getElementById('insert-component-select'),
                     starterTemplatesBtn: document.getElementById('starter-templates-btn'),
                     starterGalleryBtn: document.getElementById('starter-gallery-btn'),
                     preflightBtn: document.getElementById('preflight-inspector-btn'),
+                    viewportDesktopBtn: document.getElementById('viewport-desktop'),
+                    viewportTabletBtn: document.getElementById('viewport-tablet'),
+                    viewportMobileBtn: document.getElementById('viewport-mobile'),
+                    previewDarkToggleBtn: document.getElementById('preview-dark-toggle'),
                     exportMenuBtn: document.getElementById('export-menu-btn'),
                     exportDropdownMenu: document.getElementById('export-dropdown-menu'),
                     cleanPastedHtmlBtn: document.getElementById('clean-pasted-html-btn'),
@@ -409,6 +417,11 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     this.renderSubjectLine();
                     this.saveToLocalStorage();
                 });
+                if (this.nodes.preheaderInput) {
+                    this.nodes.preheaderInput.addEventListener('input', () => {
+                        this.saveToLocalStorage();
+                    });
+                }
                 this.nodes.emailPreview.addEventListener('input', () => {
                     this.styleAllLinks();
                     this.updateSourceFromPreview();
@@ -417,6 +430,40 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     this.renderPreview(true);
                 });
                 this.nodes.copyHtmlBtn.addEventListener('click', () => this.copyHtmlToClipboard());
+                this.nodes.copySubjectBtn?.addEventListener('click', () => {
+                    const subject = this.getRenderedSubjectLine();
+                    this.copyToClipboard(subject);
+                    this.showNotification('Rendered subject copied to clipboard!');
+                });
+                this.nodes.copyTextBtn?.addEventListener('click', () => this.copyRenderedToClipboard());
+
+                // Viewport Controls
+                const setViewport = (mode, activeBtn) => {
+                    if (window.EmailEditorUtils?.setPreviewViewport && this.nodes.previewContainer) {
+                        window.EmailEditorUtils.setPreviewViewport(this.nodes.previewContainer, mode);
+                    }
+                    [this.nodes.viewportDesktopBtn, this.nodes.viewportTabletBtn, this.nodes.viewportMobileBtn].forEach(btn => {
+                        if (!btn) return;
+                        if (btn === activeBtn) {
+                            btn.classList.add('active', 'text-slate-900');
+                            btn.classList.remove('text-slate-600');
+                        } else {
+                            btn.classList.remove('active', 'text-slate-900');
+                            btn.classList.add('text-slate-600');
+                        }
+                    });
+                };
+                this.nodes.viewportDesktopBtn?.addEventListener('click', () => setViewport('desktop', this.nodes.viewportDesktopBtn));
+                this.nodes.viewportTabletBtn?.addEventListener('click', () => setViewport('tablet', this.nodes.viewportTabletBtn));
+                this.nodes.viewportMobileBtn?.addEventListener('click', () => setViewport('mobile', this.nodes.viewportMobileBtn));
+
+                // Dark Mode Simulation
+                this.nodes.previewDarkToggleBtn?.addEventListener('click', () => {
+                    if (window.EmailEditorUtils?.togglePreviewDarkMode && this.nodes.emailPreview) {
+                        const isDark = window.EmailEditorUtils.togglePreviewDarkMode(this.nodes.emailPreview);
+                        this.showNotification(isDark ? 'Dark mode simulation enabled' : 'Dark mode simulation disabled', 'info');
+                    }
+                });
 
                 // Toolbar events
                 this.nodes.toolbar.addEventListener('click', e => {
@@ -792,10 +839,12 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 if (!window.PreFlightInspector) return;
                 const html = this.nodes.htmlInput?.value || '';
                 const subject = this.nodes.subjectLineInput?.value || '';
+                const preheader = this.nodes.preheaderInput ? this.nodes.preheaderInput.value : '';
                 const plainText = this.nodes.emailPreview?.innerText || '';
                 
                 const report = window.PreFlightInspector.runAllChecks(html, {
                     subject: subject,
+                    preheader: preheader,
                     plainText: plainText
                 });
 
@@ -2470,6 +2519,7 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 const data = {
                     html: this.nodes.htmlInput.value,
                     subjectLine: this.nodes.subjectLineInput ? this.nodes.subjectLineInput.value : '',
+                    preheader: this.nodes.preheaderInput ? this.nodes.preheaderInput.value : '',
                     variables: Array.from(this.getVariables()),
                     timestamp: new Date().toISOString()
                 };
@@ -2495,6 +2545,9 @@ Your responses must always be:
                     this.nodes.htmlInput.value = data.html;
                     if (data.subjectLine && this.nodes.subjectLineInput) {
                         this.nodes.subjectLineInput.value = data.subjectLine;
+                    }
+                    if (data.preheader && this.nodes.preheaderInput) {
+                        this.nodes.preheaderInput.value = data.preheader;
                     }
                     this.nodes.variablesContainer.innerHTML = '';
                     

@@ -174,5 +174,31 @@ Saw free guarantee 100% that {{company_name}} is hiring - reaching out from RK H
             const senderDef = defs.find(d => d.name === 'sender-name');
             expect(senderDef.name).toBe('sender-name');
         });
+
+        it('queries preheaderInput, viewport buttons, dark toggle, and quick copy buttons', () => {
+            const filePath = path.resolve(__dirname, '../js/editor/editor-app.js');
+            const fileContent = fs.readFileSync(filePath, 'utf-8');
+            expect(fileContent).toContain("preheaderInput: document.getElementById('preheader-input')");
+            expect(fileContent).toContain("previewContainer: document.getElementById('email-preview-container')");
+            expect(fileContent).toContain("viewportDesktopBtn: document.getElementById('viewport-desktop')");
+            expect(fileContent).toContain("viewportTabletBtn: document.getElementById('viewport-tablet')");
+            expect(fileContent).toContain("viewportMobileBtn: document.getElementById('viewport-mobile')");
+            expect(fileContent).toContain("previewDarkToggleBtn: document.getElementById('preview-dark-toggle')");
+            expect(fileContent).toContain("copySubjectBtn: document.getElementById('copy-subject-btn')");
+            expect(fileContent).toContain("copyTextBtn: document.getElementById('copy-text-btn')");
+        });
+
+        it('persists and restores preheader snippet in saveToLocalStorage and loadFromLocalStorage', () => {
+            const filePath = path.resolve(__dirname, '../js/editor/editor-app.js');
+            const fileContent = fs.readFileSync(filePath, 'utf-8');
+            expect(fileContent).toContain("preheader: this.nodes.preheaderInput ? this.nodes.preheaderInput.value : ''");
+            expect(fileContent).toContain("if (data.preheader && this.nodes.preheaderInput) {");
+        });
+
+        it('passes preheader to PreFlightInspector in runPreflightInspection', () => {
+            const filePath = path.resolve(__dirname, '../js/editor/editor-app.js');
+            const fileContent = fs.readFileSync(filePath, 'utf-8');
+            expect(fileContent).toMatch(/preheader:\s*preheader/);
+        });
     });
 });
