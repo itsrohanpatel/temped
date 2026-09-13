@@ -97,6 +97,42 @@ describe('AIAssistant', () => {
         }));
     });
 
+    it('should prioritize explicit prompt if passed in generateWithFallback', async () => {
+        localStorage.setItem('ai-provider', 'groq');
+        localStorage.setItem('groq-api-key', 'gsk-key');
+
+        const spy = vi.spyOn(GroqService, 'generateChatCompletion').mockResolvedValue('Custom prompt response');
+
+        const result = await assistant.generateWithFallback({
+            feature: 'optimize',
+            prompt: 'Explicit custom rendered prompt'
+        });
+
+        expect(result).toBe('Custom prompt response');
+        expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+            messages: expect.arrayContaining([
+                expect.objectContaining({ role: 'user', content: 'Explicit custom rendered prompt' })
+            ])
+        }));
+    });
+
+    it('should pass explicit temperature to GroqService if provided in options', async () => {
+        localStorage.setItem('ai-provider', 'groq');
+        localStorage.setItem('groq-api-key', 'gsk-key');
+
+        const spy = vi.spyOn(GroqService, 'generateChatCompletion').mockResolvedValue('Temp response');
+
+        await assistant.generateWithFallback({
+            feature: 'suggest',
+            prompt: 'Test prompt',
+            temperature: 0.35
+        });
+
+        expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+            temperature: 0.35
+        }));
+    });
+
     describe('Auto-Rotate Model Fallback System', () => {
         it('should auto-rotate to next best model when primary model hits a rate limit', async () => {
             localStorage.setItem('ai-provider', 'groq');

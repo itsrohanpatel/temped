@@ -167,6 +167,7 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     return await assistant.generateWithFallback({
                         feature: featureKey,
                         prompt: fullPrompt,
+                        ...variables,
                         temperature: temperature,
                         onModelRotated: (details) => {
                             this.showNotification(`Rotated AI model: ${details.fromModel} failed. Switched to ${details.toModel}.`, 'info');

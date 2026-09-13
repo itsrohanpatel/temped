@@ -269,10 +269,12 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
      */
     async generateWithFallback({
         feature,
+        prompt = null,
         content = '',
         subject = '',
         tone = 'professional',
         terms = [],
+        temperature = null,
         clientClass = null,
         fetchFn = null,
         onModelRotated = null
@@ -285,16 +287,18 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
         const autoRotate = this.isAutoRotateEnabled();
         const template = this.getPromptTemplate(feature);
         const systemPrompt = this.getSystemPrompt();
-        const formattedPrompt = this.formatPrompt(template, {
+        const formattedPrompt = prompt || this.formatPrompt(template, {
             systemPrompt,
             content,
             subjectLine: subject,
             subject,
             tone,
             numSubjects: (typeof localStorage !== 'undefined' && localStorage.getItem('num-subjects')) || '10',
-            terms: JSON.stringify(terms)
+            terms: Array.isArray(terms) ? JSON.stringify(terms) : String(terms || '[]')
         });
-        const temperature = this.getTemperatureForFeature(feature);
+        const finalTemperature = (typeof temperature === 'number' && !isNaN(temperature))
+            ? temperature
+            : this.getTemperatureForFeature(feature);
 
         // Filter out candidates in active cooldown, but keep all if all are cooled
         let activeCandidates = candidates.filter(c => !this.isCooledDown(c.model));
@@ -317,7 +321,7 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                         apiKey: candidate.apiKey,
                         model: candidate.model,
                         messages,
-                        temperature,
+                        temperature: finalTemperature,
                         maxTokens: 2048,
                         fetchFn: fetchFn || (typeof fetch !== 'undefined' ? fetch : null)
                     });
@@ -330,7 +334,7 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     const model = genAI.getGenerativeModel({
                         model: candidate.model,
                         generationConfig: {
-                            temperature,
+                            temperature: finalTemperature,
                             maxOutputTokens: 2048
                         }
                     });
