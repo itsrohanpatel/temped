@@ -146,19 +146,6 @@
                 return resolved;
             });
 
-            // Secondary pass for any remaining custom variables explicitly in the Map
-            if (variables && variables instanceof Map) {
-                variables.forEach((val, key) => {
-                    const escapedKey = window.EmailEditorUtils ? window.EmailEditorUtils.escapeRegex(key) : key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    const simpleRegex = new RegExp(`{{\\s*${escapedKey}\\s*}}`, 'g');
-                    if (wrapPills) {
-                        result = result.replace(simpleRegex, `<span class="font-semibold text-blue-600" data-variable="${key}" data-original-token="{{${key}}}" contenteditable="false">${val}</span>`);
-                    } else {
-                        result = result.replace(simpleRegex, val);
-                    }
-                });
-            }
-
             return result;
         },
 
@@ -171,14 +158,6 @@
                 const resolved = this.resolveTokenValue(key, remainder, variables);
                 return resolved !== null ? resolved : rawToken;
             });
-
-            if (variables && variables instanceof Map) {
-                variables.forEach((val, key) => {
-                    const escapedKey = window.EmailEditorUtils ? window.EmailEditorUtils.escapeRegex(key) : key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    const simpleRegex = new RegExp(`{{\\s*${escapedKey}\\s*}}`, 'g');
-                    result = result.replace(simpleRegex, val);
-                });
-            }
 
             return result;
         }

@@ -255,7 +255,7 @@ const EmailEditorUtils = {
         if (typeof window !== 'undefined' && window.DOMPurify) {
             return window.DOMPurify.sanitize(html, {
                 ADD_TAGS: ['style', 'font', 'center'],
-                ADD_ATTR: ['target', 'style', 'data-variable', 'contenteditable', 'data-id', 'data-action', 'role', 'color']
+                ADD_ATTR: ['target', 'style', 'data-variable', 'data-original-token', 'contenteditable', 'data-id', 'data-action', 'role', 'color']
             });
         }
         // Fallback sanitizer if DOMPurify is not available

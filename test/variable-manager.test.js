@@ -181,4 +181,26 @@ describe('VariableManager Subsystem Tests', () => {
         ]);
         expect(VariableManager.replaceSubjectVariables(subject, variables)).toBe('Hi Rahul - inquiry for Infosys');
     });
+
+    it('does NOT double-replace or corrupt attributes when multiple variables are in Map', () => {
+        const text = '{{Hi|Hey|Hello}} {{full_name}}, I saw {{company_name}} is hiring. {{Thanks|Regards|Best}}, {{sender-name}}';
+        const variables = new Map([
+            ['Hi', 'Hi'],
+            ['full_name', 'Rahul'],
+            ['company_name', 'Infosys'],
+            ['Thanks', 'Thanks'],
+            ['sender-name', 'Rohan Patel']
+        ]);
+
+        const rendered = VariableManager.replaceVariables(text, variables, { wrapPills: true });
+        // Must NOT leak quote or contenteditable outside tag
+        expect(rendered).not.toContain('Rahul" contenteditable="false">Rahul');
+        expect(rendered).not.toContain('Infosys" contenteditable="false">Infosys');
+        expect(rendered).not.toContain('Rohan Patel" contenteditable="false">Rohan Patel');
+
+        // Check each span is well-formed
+        expect(rendered).toContain('data-variable="full_name" data-original-token="{{full_name}}" contenteditable="false">Rahul</span>');
+        expect(rendered).toContain('data-variable="company_name" data-original-token="{{company_name}}" contenteditable="false">Infosys</span>');
+        expect(rendered).toContain('data-variable="sender-name" data-original-token="{{sender-name}}" contenteditable="false">Rohan Patel</span>');
+    });
 });
