@@ -592,6 +592,67 @@ const EmailEditorUtils = {
             this.showNotification('Failed to save data. Storage might be full.', 'error');
             return false;
         }
+    },
+
+    /**
+     * Resolves spintax strings ({opt1|opt2|opt3} or {{Hi|Hey|Hello}}) with randomization
+     * @param {string} text
+     * @param {object} options
+     * @returns {string}
+     */
+    spinText(text, options = {}) {
+        if (!text || typeof text !== 'string') return '';
+        if (typeof window !== 'undefined' && window.VariableManager && typeof window.VariableManager.spinText === 'function') {
+            return window.VariableManager.spinText(text, options);
+        }
+        const randomFn = typeof options.randomFn === 'function' ? options.randomFn : Math.random;
+        let spun = text;
+        const singleBraceRegex = /\{([^{}]+)\}/g;
+        let iterations = 0;
+        while (singleBraceRegex.test(spun) && iterations < 10) {
+            spun = spun.replace(singleBraceRegex, (match, choices) => {
+                if (!choices.includes('|')) return match;
+                const parts = choices.split('|');
+                return parts[Math.floor(randomFn() * parts.length)];
+            });
+            iterations++;
+        }
+        return spun;
+    },
+
+    /**
+     * Calculates total combination variations in text containing spintax
+     * @param {string} text
+     * @returns {number}
+     */
+    countSpintaxVariations(text) {
+        if (!text || typeof text !== 'string') return 1;
+        if (typeof window !== 'undefined' && window.VariableManager && typeof window.VariableManager.countSpintaxVariations === 'function') {
+            return window.VariableManager.countSpintaxVariations(text);
+        }
+        let total = 1;
+        const singleBraces = text.match(/\{([^{}]+)\}/g) || [];
+        singleBraces.forEach(sb => {
+            const inner = sb.slice(1, -1);
+            if (inner.includes('|')) {
+                const count = inner.split('|').length;
+                if (count > 1) total *= count;
+            }
+        });
+        const doubleBraces = text.match(/{{\s*([\w.-]+)(?:\s*\|\s*([^{}]+?))?\s*}}/g) || [];
+        doubleBraces.forEach(db => {
+            const inner = db.replace(/^{{\s*|\s*}}$/g, '');
+            if (inner.includes('|')) {
+                const parts = inner.split('|').map(p => p.trim()).filter(Boolean);
+                if (parts.length > 1) {
+                    const first = parts[0];
+                    if (!/^(first|last|full|user|company|client|customer|sender|recipient|contact|[a-zA-Z0-9]+_[a-zA-Z0-9]+)/i.test(first) || parts.length > 2) {
+                        total *= parts.length;
+                    }
+                }
+            }
+        });
+        return total;
     }
 };
 

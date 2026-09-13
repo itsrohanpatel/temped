@@ -100,8 +100,19 @@ This document tracks all bugs, usability issues, and security vulnerabilities id
   5. Unwrapped redundant empty spans and simplified nested list paragraph structures.
   6. Updated `js/editor/editor-app.js` paste handler, `autoDetectVariables`, and `removeFormat` command to recognize `--tw-` signatures and auto-trigger clean sanitization.
 
+### 16. Spintax Dynamic Randomizer Previewer & Combination Counter (#21)
+- **Feature Overview**: Email marketers and cold outreach specialists rely heavily on spintax variations (e.g. `{{Hi|Hey|Hello}}`, `{Thanks|Regards|Best}`) to prevent spam footprinting across outreach batches. Previously, TempEd Pro only displayed static fallback choices without a way to roll and preview different variations or inspect combination permutations.
+- **Implementation**:
+  1. Built recursive `spinSingleBrace` in `VariableManager` supporting both standard single-brace `{A|B|C}` and nested `{Good {morning|afternoon}|Hello}` syntax.
+  2. Integrated randomized resolution into `resolveTokenValue`, `replaceVariables`, and `replaceSubjectVariables` for double-curly `{{Option1|Option2|Option3}}` and single-curly formats.
+  3. Added `countSpintaxVariations` in `VariableManager` and `EmailEditorUtils` to accurately calculate permutation counts (e.g. 3 greetings × 4 sign-offs = 12x combinations) while preserving single fallback variables (`{{first_name|there}}`).
+  4. Added interactive `#spintax-roll-btn` with spinning dice icon (`<i class="fas fa-dice"></i>`) and combination counter badge (`#spintax-count-badge`) to the preview toolbar.
+  5. Implemented `rollSpintaxVariation()` in `js/editor/editor-app.js` with rolling feedback notification and synchronized preview re-render.
+  6. Added comprehensive automated test suite in `test/spintax-randomizer.test.js`.
+
 ---
 
 ## 🧪 Verification
-All resolutions are verified by 203 automated Vitest unit and integration tests across 16 test files with zero failures.
+All resolutions are verified by 209 automated Vitest unit and integration tests across 17 test files with zero failures.
+
 

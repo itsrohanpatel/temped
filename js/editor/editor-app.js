@@ -351,6 +351,9 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                     viewportTabletBtn: document.getElementById('viewport-tablet'),
                     viewportMobileBtn: document.getElementById('viewport-mobile'),
                     previewDarkToggleBtn: document.getElementById('preview-dark-toggle'),
+                    spintaxRollBtn: document.getElementById('spintax-roll-btn'),
+                    spintaxDiceIcon: document.getElementById('spintax-dice-icon'),
+                    spintaxCountBadge: document.getElementById('spintax-count-badge'),
                     exportMenuBtn: document.getElementById('export-menu-btn'),
                     exportDropdownMenu: document.getElementById('export-dropdown-menu'),
                     cleanPastedHtmlBtn: document.getElementById('clean-pasted-html-btn'),
@@ -362,6 +365,11 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                 this.nodes.addVariableBtn.addEventListener('click', () => this.addVariableRow());
                 if (this.nodes.autoDetectVarsBtn) {
                     this.nodes.autoDetectVarsBtn.addEventListener('click', () => this.autoDetectVariables());
+                }
+
+                // Spintax roll randomizer button
+                if (this.nodes.spintaxRollBtn) {
+                    this.nodes.spintaxRollBtn.addEventListener('click', () => this.rollSpintaxVariation());
                 }
 
                 // Clean pasted HTML button
@@ -1237,12 +1245,13 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                 linkTextInput.value = '';
             },
 
-            renderPreview(force = false) {
+            renderPreview(force = false, randomizeSpintax = false) {
                 const isPreviewFocused = !force && (document.activeElement === this.nodes.emailPreview || 
                                          (this.nodes.emailPreview && this.nodes.emailPreview.contains(document.activeElement)));
                 if (isPreviewFocused) {
-                    this.renderSubjectLine();
+                    this.renderSubjectLine(randomizeSpintax);
                     this.updateHealthBadgeAndModal();
+                    this.updateSpintaxBadge();
                     return;
                 }
 
@@ -1250,7 +1259,7 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                 const variables = this.getVariables();
 
                 if (window.VariableManager && typeof window.VariableManager.replaceVariables === 'function') {
-                    template = window.VariableManager.replaceVariables(template, variables, { wrapPills: true });
+                    template = window.VariableManager.replaceVariables(template, variables, { wrapPills: true, randomizeSpintax });
                 } else {
                     variables.forEach((value, name) => {
                         const escaped = window.EmailEditorUtils ? window.EmailEditorUtils.escapeRegex(name) : name;
@@ -1262,7 +1271,7 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                 this.nodes.recipientEmail.textContent = `${(variables.get('full_name') || 'recipient').split(' ')[0].toLowerCase()}@example.com`;
                 
                 // Render subject line preview with variable replacement
-                this.renderSubjectLine();
+                this.renderSubjectLine(randomizeSpintax);
                 
                 const isFocused = document.activeElement === this.nodes.emailPreview || 
                                   (this.nodes.emailPreview && this.nodes.emailPreview.contains(document.activeElement));
@@ -1277,6 +1286,60 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                     this.restoreSelection(this.nodes.emailPreview, selection);
                 }
                 this.updateHealthBadgeAndModal();
+                this.updateSpintaxBadge();
+            },
+
+            updateSpintaxBadge() {
+                const html = this.nodes.htmlInput?.value || '';
+                const subject = this.nodes.subjectLineInput?.value || '';
+                const fullText = `${subject}\n${html}`;
+
+                const count = window.VariableManager?.countSpintaxVariations
+                    ? window.VariableManager.countSpintaxVariations(fullText)
+                    : (window.EmailEditorUtils?.countSpintaxVariations ? window.EmailEditorUtils.countSpintaxVariations(fullText) : 1);
+
+                if (this.nodes.spintaxCountBadge) {
+                    if (count > 1) {
+                        this.nodes.spintaxCountBadge.textContent = `${count}x`;
+                        this.nodes.spintaxCountBadge.classList.remove('hidden');
+                        if (this.nodes.spintaxRollBtn) {
+                            this.nodes.spintaxRollBtn.classList.remove('opacity-50');
+                            this.nodes.spintaxRollBtn.title = `Roll variation (${count} combinations available)`;
+                        }
+                    } else {
+                        this.nodes.spintaxCountBadge.classList.add('hidden');
+                        if (this.nodes.spintaxRollBtn) {
+                            this.nodes.spintaxRollBtn.title = 'Roll / Randomize Spintax (e.g. {{Hi|Hey|Hello}})';
+                        }
+                    }
+                }
+            },
+
+            rollSpintaxVariation() {
+                const html = this.nodes.htmlInput?.value || '';
+                const subject = this.nodes.subjectLineInput?.value || '';
+                const fullText = `${subject}\n${html}`;
+
+                const count = window.VariableManager?.countSpintaxVariations
+                    ? window.VariableManager.countSpintaxVariations(fullText)
+                    : (window.EmailEditorUtils?.countSpintaxVariations ? window.EmailEditorUtils.countSpintaxVariations(fullText) : 1);
+
+                // Add spinning animation to the dice icon
+                if (this.nodes.spintaxDiceIcon) {
+                    this.nodes.spintaxDiceIcon.classList.add('fa-spin');
+                    setTimeout(() => {
+                        this.nodes.spintaxDiceIcon.classList.remove('fa-spin');
+                    }, 600);
+                }
+
+                // Render both preview canvas and subject line with randomized spintax
+                this.renderPreview(true, true);
+
+                if (count > 1) {
+                    this.showNotification(`Rolled new random variation! (${count} total combinations)`, 'success', 2000);
+                } else {
+                    this.showNotification('No spintax found. Use {{Option1|Option2}} or {Option1|Option2} to add variations.', 'info', 3000);
+                }
             },
             
             styleAllLinks() {
@@ -1293,10 +1356,10 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                 });
             },
 
-            renderSubjectLine() {
+            renderSubjectLine(randomizeSpintax = false) {
                 if (!this.nodes.subjectLineInput) return;
 
-                const renderedSubject = this.getRenderedSubjectLine();
+                const renderedSubject = this.getRenderedSubjectLine(randomizeSpintax);
 
                 // Update the preview text with rendered variables
                 if (this.nodes.subjectPreviewText) {
@@ -1304,14 +1367,14 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                 }
             },
 
-            getRenderedSubjectLine() {
+            getRenderedSubjectLine(randomizeSpintax = false) {
                 if (!this.nodes.subjectLineInput) return '';
                 
                 let subjectLine = this.nodes.subjectLineInput.value;
                 const variables = this.getVariables();
 
                 if (window.VariableManager && typeof window.VariableManager.replaceSubjectVariables === 'function') {
-                    return window.VariableManager.replaceSubjectVariables(subjectLine, variables);
+                    return window.VariableManager.replaceSubjectVariables(subjectLine, variables, { randomizeSpintax });
                 }
 
                 variables.forEach((value, name) => {

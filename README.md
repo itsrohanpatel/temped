@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
-![Tests](https://img.shields.io/badge/tests-184%20passed-brightgreen.svg)
+![Tests](https://img.shields.io/badge/tests-209%20passed-brightgreen.svg)
 ![Coverage](https://img.shields.io/badge/coverage-%3E=80%25-brightgreen.svg)
 ![AI Providers](https://img.shields.io/badge/AI-Groq%20%7C%20Gemini-orange.svg)
 ![Architecture](https://img.shields.io/badge/architecture-100%25%20client--side-blue.svg)
@@ -95,9 +95,12 @@ Craft beautiful emails, preview responsiveness across devices, simulate dark mod
 - Define preview text that displays next to or beneath your subject line in Gmail, Apple Mail, and Outlook.
 - Automatically injected into copied HTML with zero-pixel hidden styling and unicode non-breaking space padding (`&#847;&zwnj;&nbsp;&#8199;&shy;`) to prevent email body content from leaking into the inbox preview snippet.
 
-### 🔄 9. Dynamic Variables with Fallback Syntax & Auto-Discovery
+### 🔄 9. Dynamic Variables & Spintax Randomizer Previewer
 - **Standard Syntax**: `{{variable_name}}` replaced dynamically in subject and body.
 - **Fallback Syntax**: `{{first_name|there}}` or `{{company|your team}}` renders default values if recipient data is empty.
+- **Multi-Syntax Spintax Engine**: Supports both `{option1|option2|option3}` (including nested choices) and double-curly spintax `{{Hi|Hey|Hello}}` or `{{Thanks|Regards|Best}}`.
+- **Combination Counter**: Real-time counter badge (e.g. `12x`) calculating total permutation variations.
+- **Interactive Spintax Roll**: One-click preview randomizer with animated dice button to test different subject line and body variations on the fly.
 - **Auto-Detect Variables**: One-click scanner that extracts all `{{...}}` tokens from your subject line, preheader, and HTML body, automatically populating the variables manager.
 
 ### 🔒 10. Enterprise Security & Sanitization
