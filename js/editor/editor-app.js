@@ -1698,6 +1698,11 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 document.getElementById('ai-response').classList.add('hidden');
             },
 
+            hideAILoading() {
+                const el = document.getElementById('ai-loading');
+                if (el) el.classList.add('hidden');
+            },
+
             showAIResponse(content, type = 'general') {
                 const formatters = {
                     optimize: this.formatOptimizeResponse,
@@ -1889,10 +1894,14 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 if (applied === 0) {
                     const msg = skipped && skipped.length
                         ? 'No occurrences found to replace. The following were not found in your email.'
-                        : 'No occurrences found to replace.';
+                        : 'No spam replacements needed — your content looks clean and professional!';
                     return `
                         <div class="ai-response-general">
                             <div class="ai-content-card">
+                                <div class="flex items-center mb-3">
+                                    <i class="fas fa-check-circle text-2xl mr-3" style="color: var(--color-success);"></i>
+                                    <h3 class="text-base font-semibold text-slate-800">Spam Check Complete</h3>
+                                </div>
                                 <p class="text-slate-600 mb-3">${msg}</p>
                                 ${skipped && skipped.length ? `
                                     <div class="space-y-2">
@@ -2512,11 +2521,18 @@ Your responses must always be:
         
         EmailEditor.confirmSpamRewrite = async function() {
             const input = document.getElementById('spam-words-input');
-            const userList = input.value.trim();
-            const terms = (userList || '').split(',').map(s => s.trim()).filter(Boolean);
+            const userList = (input?.value || '').trim();
+            let terms = userList ? userList.split(',').map(s => s.trim()).filter(Boolean) : [];
             
+            // If empty, auto-detect from current preview spam keywords as indicated in modal placeholder
+            if (terms.length === 0) {
+                this.renderPreview();
+                terms = this.collectCurrentSpamKeywords();
+            }
+
             if (terms.length === 0) { 
-                this.showNotification('No terms provided'); 
+                this.hideSpamRewriteModal();
+                this.showNotification('No spam words detected or provided to rewrite'); 
                 return; 
             }
             
@@ -2529,8 +2545,19 @@ Your responses must always be:
             try {
                 const text = await this.callAIAssistant('rewrite', { content, terms: JSON.stringify(terms) }) || '';
                 const mapping = this.parseReplacementMapping(text);
-                if (!Array.isArray(mapping) || mapping.length === 0) {
-                    throw new Error('No valid replacements returned');
+                if (!Array.isArray(mapping)) {
+                    throw new Error('Invalid response format from AI');
+                }
+
+                // If no replacements were returned or needed (empty array [] from model)
+                if (mapping.length === 0) {
+                    this.showAIResponse({
+                        applied: 0,
+                        present: [],
+                        skipped: []
+                    }, 'replacement');
+                    this.showNotification('No spam replacements needed — your email is clean!');
+                    return;
                 }
 
                 // Filter mappings to only those that actually appear in the current preview (text) OR source (HTML)
@@ -2600,11 +2627,11 @@ Your responses must always be:
         EmailEditor.parseReplacementMapping = function(text) {
             if (!text) return [];
             try {
-                // strip fences if present
-                const cleaned = text.replace(/```[\s\S]*?\n?/g, '').trim();
+                // strip code block fences if present (```json or ```)
+                const cleaned = text.replace(/```(?:json)?\s*([\s\S]*?)\s*```/gi, '$1').replace(/```/g, '').trim();
                 const jsonStart = cleaned.indexOf('[');
                 const jsonEnd = cleaned.lastIndexOf(']');
-                if (jsonStart !== -1 && jsonEnd !== -1) {
+                if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd >= jsonStart) {
                     const arr = JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1));
                     return (Array.isArray(arr) ? arr : []).filter(x => x && typeof x.from === 'string' && typeof x.to === 'string');
                 }
