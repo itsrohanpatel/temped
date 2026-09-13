@@ -516,33 +516,9 @@
                             </div>
                         </div>
 
-                        <!-- Textarea with Floating Slash Variable Palette -->
+                        <!-- Textarea -->
                         <div class="relative min-h-[380px]">
                             <textarea id="spam-checker--textarea" class="w-full h-full p-4 font-mono text-xs custom-scrollbar leading-relaxed bg-transparent text-slate-200 resize-y" style="min-height: 380px;" placeholder="Write or paste your HTML email template here... Type / or {{ to quickly insert variables!"></textarea>
-
-                            <!-- Slash Command / Quick Variable Inserter Palette -->
-                            <div id="slash-variable-palette" class="hidden absolute top-2 left-4 z-50 w-80 max-w-[95%] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
-                                <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                                    <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                                        <i class="fas fa-bolt text-indigo-500"></i>
-                                        <span>Insert Variable</span>
-                                    </div>
-                                    <button id="close-slash-palette-btn" class="text-[10px] text-slate-400 hover:text-slate-600 font-mono" title="Close menu (Esc)">Esc</button>
-                                </div>
-                                <div class="p-2 border-b border-slate-100 bg-white">
-                                    <div class="relative">
-                                        <i class="fas fa-search absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
-                                        <input type="text" id="slash-variable-search" placeholder="Type to filter variables..." class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 font-mono">
-                                    </div>
-                                </div>
-                                <div id="slash-variable-list" class="max-h-60 overflow-y-auto custom-scrollbar divide-y divide-slate-100 text-xs">
-                                    <!-- Populated dynamically by Editor -->
-                                </div>
-                                <div class="px-3 py-1.5 bg-slate-50/90 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
-                                    <span><kbd class="px-1 py-0.5 bg-slate-200 rounded font-mono">↑↓</kbd> navigate</span>
-                                    <span><kbd class="px-1 py-0.5 bg-slate-200 rounded font-mono">Enter</kbd> insert</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -1129,6 +1105,31 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Slash Command / Quick Variable Inserter Palette (Floats for both HTML and Preview) -->
+    <div id="slash-variable-palette" class="hidden fixed z-[9999] w-80 max-w-[95%] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
+        <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                <i class="fas fa-bolt text-indigo-500"></i>
+                <span>Insert Variable</span>
+                <span id="slash-palette-context-badge" class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold uppercase">HTML</span>
+            </div>
+            <button id="close-slash-palette-btn" class="text-[10px] text-slate-400 hover:text-slate-600 font-mono cursor-pointer" title="Close menu (Esc)">Esc</button>
+        </div>
+        <div class="p-2 border-b border-slate-100 bg-white">
+            <div class="relative">
+                <i class="fas fa-search absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+                <input type="text" id="slash-variable-search" placeholder="Type to filter variables..." class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 font-mono">
+            </div>
+        </div>
+        <div id="slash-variable-list" class="max-h-60 overflow-y-auto custom-scrollbar divide-y divide-slate-100 text-xs">
+            <!-- Populated dynamically by Editor -->
+        </div>
+        <div class="px-3 py-1.5 bg-slate-50/90 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+            <span><kbd class="px-1 py-0.5 bg-slate-200 rounded font-mono">↑↓</kbd> navigate</span>
+            <span><kbd class="px-1 py-0.5 bg-slate-200 rounded font-mono">Enter</kbd> insert</span>
         </div>
     </div>
 

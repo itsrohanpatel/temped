@@ -118,12 +118,15 @@ This document tracks all bugs, usability issues, and security vulnerabilities id
 - **Implementation**:
   1. **UI/UX Overhaul**: Added `flex-wrap: wrap; gap: 0.5rem;` and `min-height: 44px;` to `.window-header` in `shared-styles.css`. Streamlined toolbar controls with `flex-shrink-0`, responsive typography breakpoints (`hidden sm:inline`, `hidden md:inline`, `hidden lg:inline`), and bounded recipient pill (`max-w-[200px] truncate`), preventing layout squishing and horizontal overflow across all screen sizes.
   2. **Bulk Variables Modal & Presets**: Added `#bulk-vars-modal` with preset chips (Cold Outreach, Job Interview, E-Commerce, SaaS), multi-format parsing in `VariableManager.parseBulkVariables` (`first_name=Alex`, `key:value`, comma-separated, newline-separated, and cleaned `{{name}}`), and `VariableManager.bulkAddVariables` to batch-populate `#variables-container` with duplicate protection.
-  3. **Slash `/` & `{{` Autocomplete Command Palette**: Built interactive floating dropdown `#slash-variable-palette` inside the editor container with keyboard navigation (`ArrowUp`, `ArrowDown`, `Enter`, `Tab`, `Escape`), real-time query filtering, category badges (`active`, `standard`, `spintax`), and quick toolbar button `{/}` for instant variable insertion.
-  4. **Automated Testing**: Added 3 new unit tests in `test/variable-manager.test.js`, bringing the test suite to 212 passing tests across 17 test files.
+  3. **Slash `/` & `{{` Autocomplete Command Palette (Dual-Mode: HTML & WYSIWYG Preview)**: Built interactive floating dropdown `#slash-variable-palette` positioned dynamically at cursor coordinates across both editors.
+     - **HTML Editor (`#spam-checker--textarea`)**: Detects `/` and `{{` triggers, filters suggestions in real time, and inserts `{{token}}` with automatic caret repositioning.
+     - **WYSIWYG Live Preview (`#email-preview`)**: Detects `/` and `{{` inline in the `contenteditable` canvas at cursor offset via `Range.getBoundingClientRect()`. Inserts styled variable pills (`<span class="font-semibold text-blue-600" data-variable="..." data-original-token="..." contenteditable="false">`) or spintax text nodes, followed by a non-breaking space for immediate typing, seamlessly syncs back to source HTML via `updateSourceFromPreview()`, and auto-registers new variables in the variable list.
+     - **Full Keyboard & Toolbar Integration**: Full `ArrowUp`, `ArrowDown`, `Enter`, `Tab`, and `Escape` keyboard handling across both surfaces, context indicator badge (`HTML` vs `PREVIEW`), and quick `{/}` toolbar trigger (`#insert-variable-quick-btn`) targeting whichever editor was last active.
+  4. **Automated Testing**: Added unit tests in `test/variable-manager.test.js`, bringing the test suite to 213 passing tests across 17 test files.
 
 ---
 
 ## 🧪 Verification
-All resolutions are verified by 212 automated Vitest unit and integration tests across 17 test files with zero failures, and clean production build with Vite.
+All resolutions are verified by 213 automated Vitest unit and integration tests across 17 test files with zero failures, and clean production build with Vite.
 
 

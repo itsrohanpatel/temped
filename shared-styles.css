@@ -342,7 +342,7 @@ html {
 
 /* Slash Variable Command Palette */
 #slash-variable-palette {
-    position: absolute;
+    position: fixed;
     z-index: 9999;
     width: 320px;
     max-width: 90vw;

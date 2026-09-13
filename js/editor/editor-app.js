@@ -372,6 +372,7 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                     slashSearch: document.getElementById('slash-variable-search'),
                     slashList: document.getElementById('slash-variable-list'),
                     closeSlashPaletteBtn: document.getElementById('close-slash-palette-btn'),
+                    slashContextBadge: document.getElementById('slash-palette-context-badge'),
                 };
             },
 
@@ -1655,7 +1656,73 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
 
                 let activeIndex = 0;
                 let currentMatches = [];
-                let triggerStartPos = -1;
+                let lastActiveEditor = 'textarea'; // 'textarea' | 'preview'
+                let activeTarget = 'textarea'; // 'textarea' | 'preview'
+                let textareaTriggerStartPos = -1;
+                let previewTriggerState = null; // { node, startOffset, endOffset, query, type }
+
+                const updateContextBadge = (target) => {
+                    if (!this.nodes.slashContextBadge) return;
+                    if (target === 'preview') {
+                        this.nodes.slashContextBadge.textContent = 'PREVIEW';
+                        this.nodes.slashContextBadge.className = 'text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold uppercase tracking-wider';
+                    } else {
+                        this.nodes.slashContextBadge.textContent = 'HTML';
+                        this.nodes.slashContextBadge.className = 'text-[9px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold uppercase tracking-wider';
+                    }
+                };
+
+                const positionPalette = (target, customRange = null) => {
+                    const palette = this.nodes.slashPalette;
+                    const paletteWidth = 320;
+                    const paletteHeight = 280;
+                    let top = 120;
+                    let left = 100;
+
+                    if (target === 'preview') {
+                        let range = customRange;
+                        if (!range) {
+                            const sel = window.getSelection();
+                            if (sel && sel.rangeCount > 0) {
+                                range = sel.getRangeAt(0);
+                            }
+                        }
+
+                        if (range && typeof range.getBoundingClientRect === 'function') {
+                            const rect = range.getBoundingClientRect();
+                            if (rect && (rect.top !== 0 || rect.bottom !== 0 || rect.left !== 0)) {
+                                top = rect.bottom + 8;
+                                left = rect.left;
+                            } else if (this.nodes.emailPreview) {
+                                const pRect = this.nodes.emailPreview.getBoundingClientRect();
+                                top = pRect.top + 40;
+                                left = pRect.left + 20;
+                            }
+                        } else if (this.nodes.emailPreview) {
+                            const pRect = this.nodes.emailPreview.getBoundingClientRect();
+                            top = pRect.top + 40;
+                            left = pRect.left + 20;
+                        }
+                    } else {
+                        if (this.nodes.htmlInput) {
+                            const taRect = this.nodes.htmlInput.getBoundingClientRect();
+                            top = taRect.top + 40;
+                            left = taRect.left + 20;
+                        }
+                    }
+
+                    // Keep inside viewport boundaries
+                    const maxLeft = Math.max(10, window.innerWidth - paletteWidth - 16);
+                    left = Math.min(Math.max(10, left), maxLeft);
+
+                    if (top + paletteHeight > window.innerHeight - 10) {
+                        top = Math.max(10, top - paletteHeight - 36);
+                    }
+                    top = Math.max(10, top);
+
+                    palette.style.top = `${Math.round(top)}px`;
+                    palette.style.left = `${Math.round(left)}px`;
+                };
 
                 const renderItems = (query = '') => {
                     if (!this.nodes.slashList) return;
@@ -1668,7 +1735,7 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                         this.nodes.slashList.innerHTML = `
                             <div class="p-3 text-center text-slate-400 text-xs">
                                 No matching variables or snippets found.<br>
-                                <span class="text-[11px] text-indigo-500 cursor-pointer hover:underline" id="slash-add-custom-var">+ Add as new variable</span>
+                                <span class="text-[11px] text-indigo-500 cursor-pointer hover:underline font-semibold" id="slash-add-custom-var">+ Add "${window.EmailEditorUtils?.escapeHtml ? window.EmailEditorUtils.escapeHtml(query) : query}" as new variable</span>
                             </div>
                         `;
                         const addCustom = this.nodes.slashList.querySelector('#slash-add-custom-var');
@@ -1676,8 +1743,12 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                             addCustom.addEventListener('click', () => {
                                 const clean = query.replace(/[^a-zA-Z0-9_.-]/g, '');
                                 if (clean) {
-                                    this.addVariableRow(clean, '');
-                                    insertToken(`{{${clean}}}`);
+                                    insertItem({
+                                        token: `{{${clean}}}`,
+                                        name: clean,
+                                        type: 'standard',
+                                        sampleValue: clean
+                                    });
                                 }
                             });
                         }
@@ -1690,7 +1761,7 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                         const isSelected = idx === activeIndex;
                         const badgeClass = item.type === 'active' ? 'active' : (item.type === 'spintax' ? 'spintax' : 'standard');
                         return `
-                            <div class="slash-item ${isSelected ? 'selected' : ''}" data-index="${idx}" data-token="${item.token}">
+                            <div class="slash-item ${isSelected ? 'selected' : ''}" data-index="${idx}">
                                 <div class="flex-1 min-w-0 pr-2">
                                     <div class="flex items-center gap-1.5">
                                         <span class="font-mono font-semibold text-slate-800 text-xs truncate">${item.token}</span>
@@ -1705,8 +1776,10 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
 
                     this.nodes.slashList.querySelectorAll('.slash-item').forEach(el => {
                         el.addEventListener('click', () => {
-                            const token = el.getAttribute('data-token');
-                            insertToken(token);
+                            const idx = parseInt(el.getAttribute('data-index'), 10);
+                            if (currentMatches[idx]) {
+                                insertItem(currentMatches[idx]);
+                            }
                         });
                         el.addEventListener('mouseenter', () => {
                             const idx = parseInt(el.getAttribute('data-index'), 10);
@@ -1730,9 +1803,12 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                     });
                 };
 
-                const openPalette = (query = '', type = '/', startPos = -1) => {
-                    triggerStartPos = startPos;
+                const openPalette = (query = '', type = '/', target = 'textarea', customRange = null) => {
+                    activeTarget = target;
+                    lastActiveEditor = target;
                     activeIndex = 0;
+                    updateContextBadge(target);
+                    positionPalette(target, customRange);
                     this.nodes.slashPalette.classList.remove('hidden');
                     if (this.nodes.slashSearch) {
                         this.nodes.slashSearch.value = query;
@@ -1742,16 +1818,26 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
 
                 const closePalette = () => {
                     this.nodes.slashPalette.classList.add('hidden');
-                    triggerStartPos = -1;
+                    textareaTriggerStartPos = -1;
+                    previewTriggerState = null;
                 };
 
-                const insertToken = (token) => {
+                const insertItem = (item) => {
+                    if (!item) return;
+                    if (activeTarget === 'preview') {
+                        insertIntoPreview(item);
+                    } else {
+                        insertIntoTextarea(item.token);
+                    }
+                };
+
+                const insertIntoTextarea = (token) => {
                     const textarea = this.nodes.htmlInput;
                     const cursor = textarea.selectionStart;
                     const fullText = textarea.value;
 
-                    if (triggerStartPos !== -1 && triggerStartPos <= cursor) {
-                        const before = fullText.slice(0, triggerStartPos);
+                    if (textareaTriggerStartPos !== -1 && textareaTriggerStartPos <= cursor) {
+                        const before = fullText.slice(0, textareaTriggerStartPos);
                         const after = fullText.slice(cursor);
                         textarea.value = before + token + after;
                         const newPos = before.length + token.length;
@@ -1769,6 +1855,92 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                     textarea.dispatchEvent(new Event('input', { bubbles: true }));
                 };
 
+                const insertIntoPreview = (item) => {
+                    const preview = this.nodes.emailPreview;
+                    if (!preview) return;
+
+                    let targetNode = previewTriggerState?.node;
+                    let startOffset = previewTriggerState?.startOffset;
+                    let endOffset = previewTriggerState?.endOffset;
+
+                    const sel = window.getSelection();
+                    if (!targetNode || !targetNode.parentNode || !preview.contains(targetNode)) {
+                        if (sel && sel.rangeCount > 0 && preview.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+                            const r = sel.getRangeAt(0);
+                            targetNode = r.startContainer;
+                            startOffset = r.startOffset;
+                            endOffset = r.endOffset;
+                        }
+                    }
+
+                    let insertNode;
+                    if (item.type === 'spintax') {
+                        insertNode = document.createTextNode(item.token);
+                    } else {
+                        const varName = item.name || item.token.replace(/[{}]/g, '').trim();
+                        const existingVars = typeof this.getVariables === 'function' ? this.getVariables() : new Map();
+
+                        if (!existingVars.has(varName)) {
+                            this.addVariableRow(varName, item.sampleValue || '');
+                            existingVars.set(varName, item.sampleValue || '');
+                        }
+
+                        const displayVal = existingVars.get(varName) || item.sampleValue || item.token;
+                        const pill = document.createElement('span');
+                        pill.className = 'font-semibold text-blue-600';
+                        pill.setAttribute('data-variable', varName);
+                        pill.setAttribute('data-original-token', `{{${varName}}}`);
+                        pill.setAttribute('contenteditable', 'false');
+                        pill.textContent = displayVal;
+                        insertNode = pill;
+                    }
+
+                    const spaceNode = document.createTextNode('\u00A0');
+
+                    if (targetNode && targetNode.nodeType === Node.TEXT_NODE && typeof startOffset === 'number' && typeof endOffset === 'number') {
+                        const replaceRange = document.createRange();
+                        const safeStart = Math.max(0, Math.min(startOffset, targetNode.textContent.length));
+                        const safeEnd = Math.max(safeStart, Math.min(endOffset, targetNode.textContent.length));
+                        replaceRange.setStart(targetNode, safeStart);
+                        replaceRange.setEnd(targetNode, safeEnd);
+                        replaceRange.deleteContents();
+                        replaceRange.insertNode(insertNode);
+
+                        if (insertNode.parentNode) {
+                            insertNode.parentNode.insertBefore(spaceNode, insertNode.nextSibling);
+                        }
+
+                        const newRange = document.createRange();
+                        newRange.setStartAfter(spaceNode);
+                        newRange.collapse(true);
+                        if (sel) {
+                            sel.removeAllRanges();
+                            sel.addRange(newRange);
+                        }
+                    } else if (sel && sel.rangeCount > 0 && preview.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+                        const r = sel.getRangeAt(0);
+                        r.deleteContents();
+                        r.insertNode(insertNode);
+                        if (insertNode.parentNode) {
+                            insertNode.parentNode.insertBefore(spaceNode, insertNode.nextSibling);
+                        }
+                        const newRange = document.createRange();
+                        newRange.setStartAfter(spaceNode);
+                        newRange.collapse(true);
+                        sel.removeAllRanges();
+                        sel.addRange(newRange);
+                    } else {
+                        preview.appendChild(insertNode);
+                        preview.appendChild(spaceNode);
+                    }
+
+                    closePalette();
+                    preview.focus();
+                    this.styleAllLinks();
+                    this.updateSourceFromPreview();
+                    this.saveToLocalStorage();
+                };
+
                 if (this.nodes.closeSlashPaletteBtn) {
                     this.nodes.closeSlashPaletteBtn.addEventListener('click', closePalette);
                 }
@@ -1777,7 +1949,14 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                     this.nodes.insertVariableQuickBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         if (this.nodes.slashPalette.classList.contains('hidden')) {
-                            openPalette('', '/', this.nodes.htmlInput.selectionStart);
+                            const isPreviewActive = lastActiveEditor === 'preview' || 
+                                (this.nodes.emailPreview && (document.activeElement === this.nodes.emailPreview || this.nodes.emailPreview.contains(document.activeElement)));
+                            const target = isPreviewActive ? 'preview' : 'textarea';
+                            if (target === 'preview') {
+                                openPalette('', '/', 'preview');
+                            } else {
+                                openPalette('', '/', 'textarea', null);
+                            }
                         } else {
                             closePalette();
                         }
@@ -1805,14 +1984,26 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                         } else if (e.key === 'Enter') {
                             e.preventDefault();
                             if (currentMatches[activeIndex]) {
-                                insertToken(currentMatches[activeIndex].token);
+                                insertItem(currentMatches[activeIndex]);
                             }
                         } else if (e.key === 'Escape') {
                             closePalette();
-                            this.nodes.htmlInput.focus();
+                            if (activeTarget === 'preview' && this.nodes.emailPreview) {
+                                this.nodes.emailPreview.focus();
+                            } else {
+                                this.nodes.htmlInput.focus();
+                            }
                         }
                     });
                 }
+
+                // Textarea event listeners
+                this.nodes.htmlInput.addEventListener('focus', () => {
+                    lastActiveEditor = 'textarea';
+                });
+                this.nodes.htmlInput.addEventListener('click', () => {
+                    lastActiveEditor = 'textarea';
+                });
 
                 this.nodes.htmlInput.addEventListener('input', () => {
                     const cursor = this.nodes.htmlInput.selectionStart;
@@ -1824,9 +2015,11 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                         const query = match[1];
                         const type = matchedTrigger.startsWith('{{') ? '{{' : '/';
                         const startPos = cursor - matchedTrigger.length;
-                        openPalette(query, type, startPos);
+                        textareaTriggerStartPos = startPos;
+                        lastActiveEditor = 'textarea';
+                        openPalette(query, type, 'textarea');
                     } else {
-                        if (!this.nodes.slashPalette.classList.contains('hidden') && triggerStartPos !== -1) {
+                        if (!this.nodes.slashPalette.classList.contains('hidden') && activeTarget === 'textarea') {
                             closePalette();
                         }
                     }
@@ -1850,13 +2043,83 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
                     } else if (e.key === 'Enter' || e.key === 'Tab') {
                         if (currentMatches[activeIndex]) {
                             e.preventDefault();
-                            insertToken(currentMatches[activeIndex].token);
+                            insertItem(currentMatches[activeIndex]);
                         }
                     } else if (e.key === 'Escape') {
                         e.preventDefault();
                         closePalette();
                     }
                 });
+
+                // Live Preview Canvas event listeners (contenteditable)
+                if (this.nodes.emailPreview) {
+                    this.nodes.emailPreview.addEventListener('focus', () => {
+                        lastActiveEditor = 'preview';
+                    });
+                    this.nodes.emailPreview.addEventListener('click', () => {
+                        lastActiveEditor = 'preview';
+                    });
+
+                    this.nodes.emailPreview.addEventListener('input', () => {
+                        const sel = window.getSelection();
+                        if (!sel || sel.rangeCount === 0) return;
+                        const range = sel.getRangeAt(0);
+                        if (!this.nodes.emailPreview.contains(range.commonAncestorContainer)) return;
+
+                        const node = range.startContainer;
+                        if (node && node.nodeType === Node.TEXT_NODE) {
+                            const textBefore = node.textContent.slice(0, range.startOffset);
+                            const match = textBefore.match(/(?:\/|{{)([\w.-]*)$/);
+                            if (match) {
+                                const matchedTrigger = match[0];
+                                const query = match[1];
+                                const type = matchedTrigger.startsWith('{{') ? '{{' : '/';
+                                const startOffset = range.startOffset - matchedTrigger.length;
+                                previewTriggerState = {
+                                    node: node,
+                                    startOffset: startOffset,
+                                    endOffset: range.startOffset,
+                                    query: query,
+                                    type: type
+                                };
+                                lastActiveEditor = 'preview';
+                                openPalette(query, type, 'preview', range);
+                                return;
+                            }
+                        }
+
+                        if (!this.nodes.slashPalette.classList.contains('hidden') && activeTarget === 'preview') {
+                            closePalette();
+                        }
+                    });
+
+                    this.nodes.emailPreview.addEventListener('keydown', (e) => {
+                        if (this.nodes.slashPalette.classList.contains('hidden')) return;
+
+                        if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            if (currentMatches.length) {
+                                activeIndex = (activeIndex + 1) % currentMatches.length;
+                                highlightItem();
+                            }
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            if (currentMatches.length) {
+                                activeIndex = (activeIndex - 1 + currentMatches.length) % currentMatches.length;
+                                highlightItem();
+                            }
+                        } else if (e.key === 'Enter' || e.key === 'Tab') {
+                            if (currentMatches[activeIndex]) {
+                                e.preventDefault();
+                                insertItem(currentMatches[activeIndex]);
+                            }
+                        } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            closePalette();
+                            this.nodes.emailPreview.focus();
+                        }
+                    });
+                }
 
                 document.addEventListener('click', (e) => {
                     if (!this.nodes.slashPalette.classList.contains('hidden')) {

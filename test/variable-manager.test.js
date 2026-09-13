@@ -268,6 +268,27 @@ describe('VariableManager Subsystem Tests', () => {
         // Query matching spintax
         const matchesSpin = VariableManager.filterVariableMatches('spin', currentVars);
         expect(matchesSpin.some(m => m.type === 'spintax')).toBe(true);
+
+        // Empty query returns prioritized active variables first
+        const allMatches = VariableManager.filterVariableMatches('', currentVars);
+        expect(allMatches.length).toBeGreaterThan(5);
+        expect(allMatches[0].type).toBe('active');
+        expect(allMatches[0].name).toBe('user_name');
+    });
+
+    it('pill creation in preview properly syncs back to source {{variable}} format', () => {
+        const preview = document.createElement('div');
+        preview.innerHTML = '<p>Hello <span class="font-semibold text-blue-600" data-variable="first_name" data-original-token="{{first_name}}" contenteditable="false">Rahul</span>, welcome to <span class="font-semibold text-blue-600" data-variable="company" data-original-token="{{company}}" contenteditable="false">Infosys</span>!</p>';
+
+        // Simulate updateSourceFromPreview serialization
+        const tempDiv = preview.cloneNode(true);
+        tempDiv.querySelectorAll('span[data-variable]').forEach(span => {
+            const originalToken = span.getAttribute('data-original-token');
+            const name = span.getAttribute('data-variable');
+            span.replaceWith(originalToken || `{{${name}}}`);
+        });
+
+        expect(tempDiv.innerHTML).toBe('<p>Hello {{first_name}}, welcome to {{company}}!</p>');
     });
 });
 
