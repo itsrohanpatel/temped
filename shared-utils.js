@@ -276,16 +276,39 @@ const EmailEditorUtils = {
         if (!html) return '';
         let clean = html;
 
-        // Unwrap custom web components / markdown nodes (e.g., Gemini's <ms-cmark-node>)
+        // 1. Strip spreadsheet / CSV / code outer quotes ("..." or '...' or \"...\")
+        let prevClean;
+        do {
+            prevClean = clean;
+            clean = clean.trim();
+            if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+                clean = clean.slice(1, -1).trim();
+            } else if ((clean.startsWith('\\"') && clean.endsWith('\\"')) || (clean.startsWith("\\'") && clean.endsWith("\\'"))) {
+                clean = clean.slice(2, -2).trim();
+            }
+        } while (clean !== prevClean);
+
+        // Strip stray leading/trailing quotes directly flanking HTML tags (e.g. "<p> or </p>")
+        clean = clean.replace(/^["'](\s*<)/, '$1');
+        clean = clean.replace(/(>\s*)["']$/, '$1');
+
+        // 2. Fix doubled or escaped quotes in HTML attributes (from CSV/Spreadsheet escaping e.g. style=""..."" or style=\"...\")
+        clean = clean.replace(/([a-zA-Z0-9_-]+)=["']{2,}([^"'\r\n>]*)["']{2,}/gi, '$1="$2"');
+        clean = clean.replace(/([a-zA-Z0-9_-]+)=\\"([^"\r\n>]*)\\"/gi, '$1="$2"');
+
+        // 3. Unwrap custom web components / markdown nodes (e.g., Gemini's <ms-cmark-node>)
         clean = clean.replace(/<\/?(?:ms-cmark-node|ng-container|c-wiz)[^>]*>/gi, '');
 
-        // Remove Angular & web framework component attributes & classes
+        // 4. Remove Angular & web framework component attributes & classes
         clean = clean.replace(/\s+_ngcontent-[a-zA-Z0-9_-]+(?:="[^"]*")?/gi, '');
         clean = clean.replace(/\s+_nghost-[a-zA-Z0-9_-]+(?:="[^"]*")?/gi, '');
         clean = clean.replace(/\s+class="[^"]*ng-star-inserted[^"]*"/gi, '');
         clean = clean.replace(/\s+class=""/gi, '');
 
-        // Strip web dark-mode backgrounds, web text colors, and tap highlight artifacts
+        // 5. Strip web CSS custom properties / variables (e.g. color: var(--color-text);) - invalid in email clients
+        clean = clean.replace(/[-a-zA-Z0-9]+:\s*var\(--[^)]+\);?/gi, '');
+
+        // 6. Strip web dark-mode backgrounds, web text colors, and tap highlight artifacts
         clean = clean.replace(/background-color:\s*(?:rgb|rgba|hsl|hsla)\([^)]+\);?/gi, '');
         clean = clean.replace(/background-color:\s*#(?:1[0-9a-f]{5}|2[0-9a-f]{5}|3[0-9a-f]{5}|0[0-9a-f]{5}|1[0-9a-f]{2}|2[0-9a-f]{2}|3[0-9a-f]{2}|000);?/gi, '');
         clean = clean.replace(/color:\s*(?:rgb|rgba)\(\s*(?:2[0-5][0-9]|19[0-9]|255)\s*,\s*(?:2[0-5][0-9]|19[0-9]|255)\s*,\s*(?:2[0-5][0-9]|19[0-9]|255)[^)]*\);?/gi, '');
@@ -293,17 +316,22 @@ const EmailEditorUtils = {
         clean = clean.replace(/font-optical-sizing:\s*[^;"]+;?/gi, '');
         clean = clean.replace(/display:\s*contents;?/gi, '');
 
-        // Unwrap redundant spans that have empty style or no attributes
-        for (let i = 0; i < 3; i++) {
+        // 7. Clean leftover empty style attributes
+        clean = clean.replace(/\s+style="\s*"/gi, '');
+        clean = clean.replace(/\s+class="\s*"/gi, '');
+
+        // 8. Unwrap redundant spans that have empty style or no attributes
+        for (let i = 0; i < 5; i++) {
             clean = clean.replace(/<span\s*>([\s\S]*?)<\/span>/gi, '$1');
             clean = clean.replace(/<span\s+style="\s*"\s*>([\s\S]*?)<\/span>/gi, '$1');
+            clean = clean.replace(/<span\s+class="\s*"\s*>([\s\S]*?)<\/span>/gi, '$1');
             clean = clean.replace(/<span\b[^>]*>\s*<\/span>/gi, '');
         }
 
-        // Simplify list item nested paragraphs (e.g. <li><p>Text</p></li> -> <li>Text</li>)
+        // 9. Simplify list item nested paragraphs (e.g. <li><p>Text</p></li> -> <li>Text</li>)
         clean = clean.replace(/<li\b[^>]*>\s*<p\b[^>]*>([\s\S]*?)<\/p>\s*<\/li>/gi, '<li>$1</li>');
 
-        // Clean leftover empty style attributes
+        // 10. Clean any newly exposed empty style attributes
         clean = clean.replace(/\s+style="\s*"/gi, '');
 
         return clean.trim();

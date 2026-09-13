@@ -370,10 +370,20 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     this.nodes.cleanPastedHtmlBtn.addEventListener('click', () => this.cleanEditorHtml());
                 }
 
-                // Auto-detect and clean dirty web/AI paste
+                // Auto-detect and clean dirty web/AI/spreadsheet paste
                 this.nodes.htmlInput.addEventListener('paste', (e) => {
                     const text = (e.clipboardData || window.clipboardData)?.getData('text');
-                    if (text && (text.includes('_ngcontent') || text.includes('ms-cmark-node') || text.includes('ng-star-inserted') || text.includes('rgb(38, 45, 61)'))) {
+                    if (text && (
+                        text.includes('_ngcontent') ||
+                        text.includes('ms-cmark-node') ||
+                        text.includes('ng-star-inserted') ||
+                        text.includes('rgb(38, 45, 61)') ||
+                        text.includes('var(--') ||
+                        /=\s*["']{2}/.test(text) ||
+                        /\\"[^"]*\\"/.test(text) ||
+                        ((text.trim().startsWith('"') && text.trim().endsWith('"') && (text.includes('<') || text.includes('\n'))) ||
+                         (text.trim().startsWith("'") && text.trim().endsWith("'") && (text.includes('<') || text.includes('\n'))))
+                    )) {
                         setTimeout(() => {
                             this.cleanEditorHtml();
                         }, 50);
@@ -678,10 +688,11 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     window.EmailEditorUtils.cleanPastedHtml(raw) : raw;
                 if (cleaned !== raw) {
                     this.nodes.htmlInput.value = cleaned;
+                    this.nodes.htmlInput.dispatchEvent(new Event('input', { bubbles: true }));
                     this.renderPreview();
                     this.updateWordCount();
                     this.saveToLocalStorage();
-                    this.showNotification('Cleaned web and AI markup artifacts!');
+                    this.showNotification('Cleaned web and spreadsheet markup artifacts!');
                 } else {
                     this.showNotification('HTML is already clean and email-ready.', 'info');
                 }
@@ -1332,6 +1343,16 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
             },
 
             autoDetectVariables() {
+                const raw = this.nodes.htmlInput ? this.nodes.htmlInput.value : '';
+                if (raw && (raw.startsWith('"') || raw.startsWith("'") || raw.includes('style=""') || raw.includes('var(--'))) {
+                    if (window.EmailEditorUtils?.cleanPastedHtml) {
+                        const cleaned = window.EmailEditorUtils.cleanPastedHtml(raw);
+                        if (cleaned !== raw) {
+                            this.nodes.htmlInput.value = cleaned;
+                            this.nodes.htmlInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    }
+                }
                 const html = this.nodes.htmlInput ? this.nodes.htmlInput.value : '';
                 const subject = this.nodes.subjectLineInput ? this.nodes.subjectLineInput.value : '';
                 const preheader = this.nodes.preheaderInput ? this.nodes.preheaderInput.value : '';

@@ -344,6 +344,54 @@ describe('EmailEditorUtils Core Tests', () => {
             expect(cleanHex).toContain('Clean Text');
             expect(cleanHex).not.toContain('<span style="">');
         });
+
+        it('cleanPastedHtml strips spreadsheet cell outer quotes and escaped quotes', () => {
+            expect(utils.cleanPastedHtml('"<p>Hello world</p>"')).toBe('<p>Hello world</p>');
+            expect(utils.cleanPastedHtml("'<p>Single quoted</p>'")).toBe('<p>Single quoted</p>');
+            expect(utils.cleanPastedHtml('\\"<p>Escaped quoted</p>\\"')).toBe('<p>Escaped quoted</p>');
+            expect(utils.cleanPastedHtml('  "<p>With whitespace</p>"  ')).toBe('<p>With whitespace</p>');
+            expect(utils.cleanPastedHtml('"<p>Flanking open tag</p>')).toBe('<p>Flanking open tag</p>');
+            expect(utils.cleanPastedHtml('<p>Flanking close tag</p>"')).toBe('<p>Flanking close tag</p>');
+        });
+
+        it('cleanPastedHtml fixes doubled attribute quotes and removes CSS custom variables', () => {
+            const dirty = '<p><span style=""color: var(--color-text);"">{{Hi|Hey|Hello}} </span>{{full_name}}<span style=""color: var(--color-text);"">, </span></p>';
+            const clean = utils.cleanPastedHtml(dirty);
+            expect(clean).not.toContain('style=""');
+            expect(clean).not.toContain('var(--color-text)');
+            expect(clean).not.toContain('<span');
+            expect(clean).toBe('<p>{{Hi|Hey|Hello}} {{full_name}}, </p>');
+        });
+
+        it('cleanPastedHtml handles the exact spreadsheet template reported by the user', () => {
+            const dirtySpreadsheetTemplate = `"<p><span style=""color: var(--color-text);"">{{Hi|Hey|Hello}} </span>{{full_name}}<span style=""color: var(--color-text);"">, </span></p>
+<p>Saw that {{company_name}} is hiring - reaching out from RK HR Management, a recruitment agency and executive search consultancy working with clients across India, Africa, and globally since 2009.</p>
+<p>We run end-to-end recruitment - sourcing, screening, background verification - and typically deliver shortlisted candidates within 48 hours.</p>
+<p>Can you send over the JD (and any budget)? Happy to share our charges and turnaround time so we can move quickly.</p>
+<p>{{Thanks|Regards|Best}},</p>
+<p>{{sender-name}}&nbsp;|&nbsp;84606 62200</p>
+<p><span style=""color: var(--color-text);"">RK HR Management</span>&nbsp;| Recruitment Agency</p>
+<p>https://www.rkhrm.com/</p>"`;
+
+            const clean = utils.cleanPastedHtml(dirtySpreadsheetTemplate);
+            // Must not start or end with stray quote
+            expect(clean.startsWith('"')).toBe(false);
+            expect(clean.endsWith('"')).toBe(false);
+            // Must not contain doubled quotes in attributes
+            expect(clean).not.toContain('style=""');
+            // Must not contain CSS variables
+            expect(clean).not.toContain('var(--color-text)');
+            // Must unwrap the redundant spans
+            expect(clean).not.toContain('<span');
+            // Must preserve all spintax, variables, and content
+            expect(clean).toContain('{{Hi|Hey|Hello}}');
+            expect(clean).toContain('{{full_name}}');
+            expect(clean).toContain('{{company_name}}');
+            expect(clean).toContain('{{Thanks|Regards|Best}}');
+            expect(clean).toContain('{{sender-name}}');
+            expect(clean).toContain('https://www.rkhrm.com/');
+            expect(clean).toContain('RK HR Management&nbsp;| Recruitment Agency');
+        });
     });
 });
 
