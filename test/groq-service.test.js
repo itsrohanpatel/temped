@@ -171,6 +171,23 @@ describe('GroqService', () => {
         });
     });
 
+    describe('cleanOutput', () => {
+        it('should strip <think>...</think> tags and internal reasoning', () => {
+            const rawWithThink = '<think>\nHere is my thinking process...\n1. Do this\n</think>\n<p>Clean email content</p>';
+            expect(GroqService.cleanOutput(rawWithThink)).toBe('<p>Clean email content</p>');
+        });
+
+        it('should return empty string for non-string inputs', () => {
+            expect(GroqService.cleanOutput(null)).toBe('');
+            expect(GroqService.cleanOutput(undefined)).toBe('');
+        });
+
+        it('should preserve text that has no reasoning tags', () => {
+            const normal = '<p>Normal text</p>';
+            expect(GroqService.cleanOutput(normal)).toBe('<p>Normal text</p>');
+        });
+    });
+
     describe('getDefaultModels', () => {
         it('should return a list of standard Groq models', () => {
             const defaults = GroqService.getDefaultModels();

@@ -192,98 +192,89 @@ export class SettingsManager {
         return {
             optimize: `{systemPrompt}
 
-### GOAL
-Rewrite the user's email content to be more professional, engaging, and effective, maximizing both deliverability and conversion potential.
+### ROLE & GOAL
+You are a world-class conversion copywriter and email deliverability specialist. Rewrite the user's email to maximize engagement, inbox deliverability, and click-through rate using AIDA (Attention, Interest, Desire, Action) and PAS (Problem, Agitate, Solution) principles.
 
-### INSTRUCTIONS
-1.  **Analyze the original email:** Internally, evaluate the email against the AIDA framework (Attention, Interest, Desire, Action). Identify its weakest points.
-2.  **Rewrite for Impact:** Revise the email to strengthen each AIDA stage. Improve the opening hook, clarify the value proposition, create a stronger desire for the offer, and write a clearer, more compelling call-to-action.
-3.  **Ensure Professionalism:** Refine the language to be professional and persuasive. Eliminate spam trigger words and awkward phrasing.
-
-### CONSTRAINTS
-- The rewritten content must remain under 200 words.
-- Preserve the original intent and key information (company names, links, contact details).
-- Do not add any commentary or explanation.
-
-### OUTPUT FORMAT
-Return only the rewritten email content in its original HTML format.
+### STRICT RULES & CONSTRAINTS
+1. **HTML FORMAT ONLY:** Return ONLY valid HTML markup using clean email-safe tags (<p>, <strong>, <em>, <a>, <ul>, <li>). Do NOT use markdown syntax (like **bold** or # headings) inside or outside the HTML.
+2. **NO CHATTER:** Do NOT include any introductory or concluding text, explanations, or labels (e.g., no "Here is the email:"). Start directly with the opening HTML tag.
+3. **SPAM PREVENTION:** Avoid spam-trigger phrases (e.g., "100% free", "risk-free", "buy now", "click here", "guaranteed"). Never use ALL-CAPS words or excessive exclamation points.
+4. **LENGTH:** Keep the rewritten email under 200 words.
+5. **PRESERVE ESSENTIALS:** Retain all original URLs, links, dynamic merge variables (e.g. {{name}}, {{first_name}}), and core factual details.
 
 ### ORIGINAL EMAIL CONTENT
 {content}`,
             suggest: `{systemPrompt}
 
-### GOAL
-Analyze the provided email content and subject line, then provide a concise list of the most critical, actionable suggestions for improvement.
+### ROLE & GOAL
+Analyze the provided email content and subject line, then provide a concise, high-impact list of the 4 most critical improvements.
 
-### INSTRUCTIONS
-Structure your feedback into the following four sections, using the exact markdown format shown in the example below:
-1.  **Subject Line:** Suggest one powerful alternative.
-2.  **Opening:** Recommend a change to the first sentence to make it more compelling.
-3.  **Call-to-Action (CTA):** Propose a more direct and persuasive CTA.
-4.  **Deliverability:** Identify one key change to avoid spam filters.
+### REQUIRED STRUCTURE
+Provide your feedback in exactly these four numbered sections:
+**1. Subject Line:** One compelling, high-converting alternative subject line.
+**2. Opening Hook:** A revised first sentence that immediately captures interest or addresses a core problem.
+**3. Call-to-Action (CTA):** A direct, value-focused CTA that replaces generic "click here" or "buy now" phrasing.
+**4. Deliverability:** Specific changes to avoid spam filters and improve inbox placement.
 
 ### CONSTRAINTS
-- Your entire response must be under 150 words.
-- Be extremely specific and actionable.
-
-### EXAMPLE
-**Input Content:** "Hello, check out our new product. It's on sale for a limited time only! Click here to buy now."
-**Perfect Output:**
-**1. Subject Line:** Instead of "New Product," try "Your Exclusive First Look at [Product Name]."
-**2. Opening:** Start with the main benefit, such as "Solve [Problem] in minutes with our new..."
-**3. Call-to-Action (CTA):** Change "Click here" to a value-focused CTA like "Get Your [Product Name] Now."
-**4. Deliverability:** Avoid the phrase "limited time only," as it can trigger spam filters. Use "offer ends Friday" instead.
+- Keep total response under 150 words.
+- Be concise, direct, and actionable.
+- Do not include conversational filler before or after the feedback.
 
 ### EMAIL TO ANALYZE
 Subject: {subjectLine}
 Content: {content}`,
             tone: `{systemPrompt}
 
-### GOAL
-Rewrite the provided email content to match a {tone} tone, ensuring the core message, structure, and all details (links, variables) remain intact.
+### ROLE & GOAL
+Rewrite the provided email content to match a {tone} tone while maintaining high inbox deliverability, persuasive clarity, and professional standards.
 
-### CONSTRAINTS
-- Return only the rewritten email content.
-- Do not include any introductory text, explanations, or labels.
+### STRICT RULES & CONSTRAINTS
+1. **FORMAT:** Return ONLY the rewritten email in valid HTML (<p>, <strong>, <a>, etc.). No markdown syntax (**bold**, #).
+2. **NO CHATTER:** Zero introductory text, commentary, or labels. Start directly with the HTML.
+3. **SPAM SAFETY:** Even for urgent or excited tones, do NOT shout in ALL-CAPS, do not use multiple exclamation points (!!!), and do not use spam-flagged trigger words.
+4. **PRESERVE DETAILS:** Keep all URLs, links, merge variables (e.g. {{name}}), and core facts intact.
 
 ### ORIGINAL CONTENT
 {content}`,
             subject: `{systemPrompt}
 
-### GOAL
-Generate {numSubjects} compelling, high-converting subject lines for the provided email content.
+### ROLE & GOAL
+Generate {numSubjects} compelling, high-converting subject lines for the provided email.
 
-### INSTRUCTIONS
-- Analyze the email's core value proposition.
-- Create subject lines that are intriguing, benefit-oriented, and personalized.
-- If the original subject uses variables like {{company_name}}, you may use them in your suggestions.
+### FORMULAS TO APPLY
+Provide a mix of proven subject line styles:
+- Curiosity / Intrigue
+- Benefit / Outcome-driven
+- Personal / Conversational
+- Urgency / Time-sensitive (without spam trigger words)
+- Question-based
 
 ### OUTPUT FORMAT
-Return only the {numSubjects} subject lines, one per line. Do not use numbers, bullets, or any extra text.
+- Return EXACTLY {numSubjects} lines, one subject line per line.
+- Do NOT use numbers (e.g. "1. "), bullet points, quotes, emojis, or markdown.
+- Do NOT include any introductory or concluding text.
+- If merge variables (e.g. {{first_name}}) fit naturally, you may use them.
 
 ### EMAIL CONTEXT
 Current Subject: {subjectLine}
 Email Content: {content}`,
             rewrite: `{systemPrompt}
 
-### GOAL
-Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases from the TERMS list with safer, more professional alternatives.
+### ROLE & GOAL
+Analyze the provided email content and replace spam-trigger words and phrases from the TERMS list with safer, high-deliverability alternatives.
 
 ### CRITICAL RULES
-1.  **Format:** Your output MUST be a valid JSON array of objects with the shape: [{"from": "original_word", "to": "replacement_word"}].
-2.  **Replacements:** NEVER suggest the same word as a replacement. The "to" value must be a meaningful improvement.
-3.  **Safety:** The "to" value must be a natural, non-spammy alternative.
-4.  **Precision:** Replace ONLY the provided words when they appear as standalone text. Do NOT alter HTML tags, attributes, links, or variables (e.g., {{name}}). Match case where sensible.
-5.  **Omission:** If you cannot find a genuinely better replacement for a term, OMIT it from the final JSON array.
-
-### EXAMPLE
-**TERMS:** ["free gift", "act now"]
-**Perfect Output:** [{"from":"free gift","to":"complimentary gift"},{"from":"act now","to":"get started"}]
+1. **OUTPUT FORMAT:** Return ONLY a valid JSON array of replacement objects: [{"from": "original_term", "to": "safer_alternative"}].
+2. **NO CODE FENCES OR TEXT:** Do NOT wrap in markdown code fences (no \`\`\`json). Do NOT add explanations, notes, or chit-chat. Output raw JSON only.
+3. **BETTER ALTERNATIVE:** The "to" replacement MUST be a natural, deliverable, non-spam alternative. Never return the same word.
+4. **STANDALONE ONLY:** Replace only standalone words and phrases. NEVER modify HTML tags, attribute names, href URLs, or template variables (e.g. {{name}}).
+5. **OMIT UNNECESSARY:** If a term cannot be improved meaningfully, omit it from the array.
 
 ### TERMS TO REPLACE
 {terms}
 
-### EMAIL_HTML
+### EMAIL CONTENT
 {content}`
         };
     }

@@ -83,7 +83,15 @@ This document tracks all bugs, usability issues, and security vulnerabilities id
 - **Previous Issue**: `#preheader-input` was missing from `queryNodes()`, wasn't passed into PreFlightInspector, and wasn't persisted to localStorage; `#viewport-desktop/tablet/mobile`, `#preview-dark-toggle`, `#copy-subject-btn`, and `#copy-text-btn` lacked event listeners.
 - **Fix**: Added nodes to `queryNodes()`, wired input & click event handlers, persisted preheader to storage, passed preheader to PreFlight checks, and added email client preview typography rules.
 
+### 14. Groq OTPM Rate Limits, Reasoning Tag Leakage & Prompt Template Enhancements (#19)
+- **Previous Issue**: Requests to Groq failed with `rate_limit_exceeded` on output tokens per minute (OTPM) due to `maxTokens: 2048` exceeding the 1,000 OTPM ceiling; reasoning models (e.g. Qwen) emitted internal `<think>` traces into email content and broke JSON parsing; previous prompt templates generated markdown asterisks inside HTML and lacked strict negative constraints against conversational filler.
+- **Fix**:
+  1. Capped `maxTokens` dynamically by feature (800 for optimize/tone, 500 for suggest/rewrite, 250 for subject), staying well under Groq's 1,000 OTPM limit.
+  2. Implemented `GroqService.cleanOutput` to strip `<think>...</think>` internal reasoning traces before returning to editor workflows.
+  3. Redesigned all default prompt templates (`optimize`, `suggest`, `tone`, `subject`, `rewrite`) with strict role-based framing, markdown-free HTML enforcement, raw JSON array enforcement, and spam-safe wording constraints.
+
 ---
 
 ## 🧪 Verification
-All resolutions are verified by 199 automated Vitest unit and integration tests across 16 test files with zero failures.
+All resolutions are verified by 202 automated Vitest unit and integration tests across 16 test files with zero failures.
+

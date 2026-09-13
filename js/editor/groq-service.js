@@ -151,6 +151,16 @@ export class GroqService {
     }
 
     /**
+     * Clean raw output from AI models (stripping internal reasoning tags like <think>...</think>).
+     * @param {string} text
+     * @returns {string}
+     */
+    static cleanOutput(text) {
+        if (typeof text !== 'string') return '';
+        return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    }
+
+    /**
      * Generate chat completion with a specific Groq model.
      * @param {Object} params
      * @param {string} params.apiKey
@@ -166,7 +176,7 @@ export class GroqService {
         model,
         messages,
         temperature = 1.0,
-        maxTokens = 2048,
+        maxTokens = 1000,
         fetchFn = (typeof fetch !== 'undefined' ? fetch : null)
     }) {
         if (!apiKey || !apiKey.trim()) {
@@ -217,7 +227,7 @@ export class GroqService {
             throw new Error('Unexpected response structure from Groq API.');
         }
 
-        return content;
+        return this.cleanOutput(content);
     }
 }
 
