@@ -550,7 +550,7 @@ const EmailEditorUtils = {
  */
 const PreFlightInspector = {
     checkHtmlSize(html) {
-        if (!html) return { bytes: 0, sizeKb: 0, status: 'pass', message: 'Empty email' };
+        if (!html) return { bytes: 0, sizeKb: 0, formattedSize: '0KB', status: 'pass', message: 'Empty email' };
         // Use Blob or Buffer byte length calculation
         let bytes = 0;
         if (typeof Blob !== 'undefined') {
@@ -561,10 +561,12 @@ const PreFlightInspector = {
             bytes = unescape(encodeURIComponent(html)).length;
         }
         const sizeKb = Math.round((bytes / 1024) * 10) / 10;
+        const formattedSize = `${sizeKb}KB`;
         if (sizeKb > 102) {
             return {
                 bytes,
                 sizeKb,
+                formattedSize,
                 status: 'fail',
                 message: `Email size is ${sizeKb}KB (>102KB). Gmail will clip this email with "[Message clipped] View entire message".`
             };
@@ -573,6 +575,7 @@ const PreFlightInspector = {
             return {
                 bytes,
                 sizeKb,
+                formattedSize,
                 status: 'warn',
                 message: `Email size is ${sizeKb}KB. Approaching the 102KB Gmail clipping threshold.`
             };
@@ -580,6 +583,7 @@ const PreFlightInspector = {
         return {
             bytes,
             sizeKb,
+            formattedSize,
             status: 'pass',
             message: `Safe email size: ${sizeKb}KB (well below 102KB Gmail clipping limit).`
         };

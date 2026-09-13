@@ -238,4 +238,15 @@ export class TemplateManager {
 if (typeof window !== 'undefined') {
     window.TemplateManager = TemplateManager;
     window.TemplatesPage = new TemplateManager();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (document.getElementById('templates-list')) {
+                window.TemplatesPage.init();
+            }
+        });
+    } else {
+        if (document.getElementById('templates-list')) {
+            window.TemplatesPage.init();
+        }
+    }
 }

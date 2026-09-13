@@ -128,5 +128,14 @@ describe('EmailEditor Orchestrator (editor-app.js)', () => {
             expect(fileContent).toContain('if (mapping.length === 0) {');
             expect(fileContent).toContain('No spam replacements needed — your email is clean!');
         });
+
+        it('contains showHealthModal and hideHealthModal methods and does not display undefined size', () => {
+            const filePath = path.resolve(__dirname, '../js/editor/editor-app.js');
+            const fileContent = fs.readFileSync(filePath, 'utf-8');
+            expect(fileContent).toContain('showHealthModal');
+            expect(fileContent).toContain('hideHealthModal');
+            // sizeDisplay should not naively interpolate undefined
+            expect(fileContent).not.toMatch(/sizeDisplay\.textContent\s*=\s*`\(\$\{report\.checks\.size\.formattedSize\}\)`/);
+        });
     });
 });

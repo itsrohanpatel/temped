@@ -77,4 +77,11 @@ describe('TemplateManager', () => {
         deleteBtn.click();
         expect(manager.getTemplates()).toHaveLength(0);
     });
+
+    it('ensures templates.html loads template-manager.js as type="module"', () => {
+        const fs = require('fs');
+        const path = require('path');
+        const html = fs.readFileSync(path.resolve(__dirname, '../templates.html'), 'utf-8');
+        expect(html).toMatch(/<script\s+type=["']module["']\s+src=["']js\/templates\/template-manager\.js["']/);
+    });
 });

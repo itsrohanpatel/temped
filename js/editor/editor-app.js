@@ -561,6 +561,20 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     if (e.target.id === 'spam-rewrite-modal') this.hideSpamRewriteModal();
                 });
 
+                // Deliverability health modal events
+                const healthBadge = document.getElementById('health-score-badge');
+                if (healthBadge) healthBadge.addEventListener('click', () => this.showHealthModal());
+                const closeHealthBtn = document.getElementById('close-health-modal');
+                if (closeHealthBtn) closeHealthBtn.addEventListener('click', () => this.hideHealthModal());
+                const okHealthBtn = document.getElementById('health-modal-ok-btn');
+                if (okHealthBtn) okHealthBtn.addEventListener('click', () => this.hideHealthModal());
+                const healthModal = document.getElementById('health-modal');
+                if (healthModal) {
+                    healthModal.addEventListener('click', (e) => {
+                        if (e.target.id === 'health-modal') this.hideHealthModal();
+                    });
+                }
+
                 // If spam keywords load after initial render, re-highlight preview
                 document.addEventListener('spamKeywordsReady', () => {
                     this.highlightSpamInPreview();
@@ -773,7 +787,8 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     checksRatio.textContent = `${report.passedCount}/${report.totalCount} Passed`;
                 }
                 if (sizeDisplay) {
-                    sizeDisplay.textContent = `(${report.checks.size.formattedSize})`;
+                    const sizeStr = report.checks?.size?.formattedSize || (report.checks?.size?.sizeKb !== undefined ? `${report.checks.size.sizeKb}KB` : '0KB');
+                    sizeDisplay.textContent = `(${sizeStr})`;
                 }
                 if (overallBadge) {
                     if (report.overallStatus === 'ready') {
@@ -2505,6 +2520,17 @@ Your responses must always be:
             const detected = this.collectCurrentSpamKeywords();
             const defaultList = detected.slice(0, 30).join(', ');
             this.showSpamRewriteModal(defaultList);
+        };
+        
+        EmailEditor.showHealthModal = function() {
+            this.updateHealthBadgeAndModal();
+            const modal = document.getElementById('health-modal');
+            if (modal) modal.classList.remove('hidden');
+        };
+        
+        EmailEditor.hideHealthModal = function() {
+            const modal = document.getElementById('health-modal');
+            if (modal) modal.classList.add('hidden');
         };
         
         EmailEditor.showSpamRewriteModal = function(defaultWords) {

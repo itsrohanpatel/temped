@@ -112,4 +112,14 @@ To unsubscribe, please click here: https://example.com/optout`;
             expect(secure.hasInsecureLinks).toBe(false);
         });
     });
+
+    describe('HighlightWithinTextarea Plugin Integrity', () => {
+        it('defines handleScroll and blockContainerScroll on prototype without throwing bind errors', () => {
+            const fs = require('fs');
+            const path = require('path');
+            const code = fs.readFileSync(path.resolve(__dirname, '../spam-filter.js'), 'utf-8');
+            expect(code).toContain('handleScroll:');
+            expect(code).toContain('blockContainerScroll:');
+        });
+    });
 });

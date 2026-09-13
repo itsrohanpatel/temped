@@ -9,6 +9,7 @@ describe('PreFlightInspector Deliverability Checks', () => {
             const result = PreFlightInspector.checkHtmlSize('');
             expect(result.status).toBe('pass');
             expect(result.sizeKb).toBe(0);
+            expect(result.formattedSize).toBe('0KB');
         });
 
         it('should pass emails well under 95KB', () => {
@@ -17,6 +18,7 @@ describe('PreFlightInspector Deliverability Checks', () => {
             expect(result.status).toBe('pass');
             expect(result.bytes).toBeGreaterThan(0);
             expect(result.sizeKb).toBeLessThan(95);
+            expect(result.formattedSize).toMatch(/^\d+(\.\d+)?KB$/);
             expect(result.message).toContain('Safe');
         });
 
