@@ -101,13 +101,13 @@ describe('AIAssistant', () => {
         it('should auto-rotate to next best model when primary model hits a rate limit', async () => {
             localStorage.setItem('ai-provider', 'groq');
             localStorage.setItem('groq-api-key', 'gsk-key');
-            localStorage.setItem('groq-model-name', 'llama-3.3-70b-versatile');
+            localStorage.setItem('groq-model-name', 'openai/gpt-oss-120b');
             localStorage.setItem('ai-auto-rotate', 'true');
 
-            const rateLimitError = new Error('Rate limit reached on llama-3.3-70b-versatile');
+            const rateLimitError = new Error('Rate limit reached on openai/gpt-oss-120b');
             rateLimitError.isRateLimit = true;
             rateLimitError.status = 429;
-            rateLimitError.model = 'llama-3.3-70b-versatile';
+            rateLimitError.model = 'openai/gpt-oss-120b';
 
             const spy = vi.spyOn(GroqService, 'generateChatCompletion')
                 .mockRejectedValueOnce(rateLimitError)
@@ -124,8 +124,8 @@ describe('AIAssistant', () => {
             expect(result).toBe('<p>Fallback succeeded with instant model</p>');
             expect(spy).toHaveBeenCalledTimes(2);
             expect(onModelRotated).toHaveBeenCalledWith(expect.objectContaining({
-                fromModel: 'llama-3.3-70b-versatile',
-                toModel: 'llama-3.1-8b-instant',
+                fromModel: 'openai/gpt-oss-120b',
+                toModel: 'openai/gpt-oss-20b',
                 reason: expect.stringMatching(/rate limit/i)
             }));
         });
@@ -133,10 +133,10 @@ describe('AIAssistant', () => {
         it('should track cooldowns and bypass rate-limited models on subsequent requests', async () => {
             localStorage.setItem('ai-provider', 'groq');
             localStorage.setItem('groq-api-key', 'gsk-key');
-            localStorage.setItem('groq-model-name', 'llama-3.3-70b-versatile');
+            localStorage.setItem('groq-model-name', 'openai/gpt-oss-120b');
 
-            // Put llama-3.3-70b-versatile into cooldown
-            assistant.setCooldown('llama-3.3-70b-versatile', 60000);
+            // Put openai/gpt-oss-120b into cooldown
+            assistant.setCooldown('openai/gpt-oss-120b', 60000);
 
             const spy = vi.spyOn(GroqService, 'generateChatCompletion').mockResolvedValue('<p>Instant response</p>');
 
@@ -148,7 +148,7 @@ describe('AIAssistant', () => {
             expect(result).toBe('<p>Instant response</p>');
             // Should have called the next non-cooled model directly
             expect(spy).toHaveBeenCalledWith(expect.objectContaining({
-                model: 'llama-3.1-8b-instant'
+                model: 'openai/gpt-oss-20b'
             }));
         });
 

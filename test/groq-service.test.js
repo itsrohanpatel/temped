@@ -16,11 +16,12 @@ describe('GroqService', () => {
             const mockModelsResponse = {
                 data: [
                     { id: 'whisper-large-v3', active: true, context_window: 1500 },
-                    { id: 'llama-3.1-8b-instant', active: true, context_window: 131072 },
-                    { id: 'llama-3.3-70b-versatile', active: true, context_window: 131072 },
-                    { id: 'mixtral-8x7b-32768', active: true, context_window: 32768 },
-                    { id: 'distil-whisper-large-v3-en', active: true, context_window: 1500 },
-                    { id: 'gemma2-9b-it', active: true, context_window: 8192 }
+                    { id: 'canopylabs/orpheus-arabic-saudi', active: true, context_window: 4096 },
+                    { id: 'meta-llama/llama-prompt-guard-2-86m', active: true, context_window: 4096 },
+                    { id: 'openai/gpt-oss-20b', active: true, context_window: 131072 },
+                    { id: 'openai/gpt-oss-120b', active: true, context_window: 131072 },
+                    { id: 'groq/compound', active: true, context_window: 131072 },
+                    { id: 'distil-whisper-large-v3-en', active: true, context_window: 1500 }
                 ]
             };
 
@@ -40,14 +41,16 @@ describe('GroqService', () => {
                 }
             });
 
-            // Whisper models should be filtered out for text editing
+            // Audio, prompt-guard, and canopylabs models should be filtered out
             expect(models.map(m => m.id)).not.toContain('whisper-large-v3');
             expect(models.map(m => m.id)).not.toContain('distil-whisper-large-v3-en');
+            expect(models.map(m => m.id)).not.toContain('canopylabs/orpheus-arabic-saudi');
+            expect(models.map(m => m.id)).not.toContain('meta-llama/llama-prompt-guard-2-86m');
 
-            // Text models should be included with versatile/recommended models prioritized
-            expect(models[0].id).toBe('llama-3.3-70b-versatile');
-            expect(models.some(m => m.id === 'llama-3.1-8b-instant')).toBe(true);
-            expect(models.some(m => m.id === 'mixtral-8x7b-32768')).toBe(true);
+            // Text models should be included with recommended models prioritized
+            expect(models[0].id).toBe('openai/gpt-oss-120b');
+            expect(models.some(m => m.id === 'openai/gpt-oss-20b')).toBe(true);
+            expect(models.some(m => m.id === 'groq/compound')).toBe(true);
 
             // Cached in localStorage
             const cached = JSON.parse(localStorage.getItem('groq-cached-models') || '[]');
@@ -172,8 +175,8 @@ describe('GroqService', () => {
         it('should return a list of standard Groq models', () => {
             const defaults = GroqService.getDefaultModels();
             expect(Array.isArray(defaults)).toBe(true);
-            expect(defaults).toContain('llama-3.3-70b-versatile');
-            expect(defaults).toContain('llama-3.1-8b-instant');
+            expect(defaults).toContain('openai/gpt-oss-120b');
+            expect(defaults).toContain('groq/compound');
         });
     });
 });

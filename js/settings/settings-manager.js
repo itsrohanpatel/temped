@@ -28,7 +28,7 @@ export class SettingsManager {
         const groqKeyEl = document.getElementById('groq-api-key');
         if (groqKeyEl) groqKeyEl.value = groqApiKey;
 
-        const groqModel = localStorage.getItem('groq-model-name') || 'llama-3.3-70b-versatile';
+        const groqModel = localStorage.getItem('groq-model-name') || 'openai/gpt-oss-120b';
         const cachedGroqModels = localStorage.getItem('groq-cached-models');
         if (cachedGroqModels) {
             try {

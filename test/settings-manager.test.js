@@ -16,7 +16,7 @@ describe('SettingsManager', () => {
             <input id="groq-api-key" />
             <button id="toggle-groq-api-key"><i class="fas fa-eye"></i></button>
             <select id="groq-model-select">
-                <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
+                <option value="openai/gpt-oss-120b">openai/gpt-oss-120b</option>
             </select>
             <button id="fetch-groq-models-btn"></button>
             <div id="groq-models-status"></div>
@@ -76,7 +76,7 @@ describe('SettingsManager', () => {
     it('should load default configuration into form elements', () => {
         settings.loadSettings();
         expect(document.getElementById('ai-model').value).toBe('gemini-2.5-flash-lite');
-        expect(document.getElementById('groq-model-select').value).toBe('llama-3.3-70b-versatile');
+        expect(document.getElementById('groq-model-select').value).toBe('openai/gpt-oss-120b');
         expect(document.getElementById('num-subjects').value).toBe('10');
         expect(document.getElementById('prompt-optimize').value).toContain('{content}');
     });
@@ -84,7 +84,7 @@ describe('SettingsManager', () => {
     it('should save AI configuration including Groq credentials and provider to localStorage', () => {
         document.querySelector('input[name="ai-provider"][value="groq"]').checked = true;
         document.getElementById('groq-api-key').value = 'gsk-secret-groq-key';
-        document.getElementById('groq-model-select').value = 'llama-3.3-70b-versatile';
+        document.getElementById('groq-model-select').value = 'openai/gpt-oss-120b';
         document.getElementById('ai-auto-rotate').checked = true;
 
         document.getElementById('gemini-api-key').value = 'secret-test-key';
@@ -96,7 +96,7 @@ describe('SettingsManager', () => {
 
         expect(localStorage.getItem('ai-provider')).toBe('groq');
         expect(localStorage.getItem('groq-api-key')).toBe('gsk-secret-groq-key');
-        expect(localStorage.getItem('groq-model-name')).toBe('llama-3.3-70b-versatile');
+        expect(localStorage.getItem('groq-model-name')).toBe('openai/gpt-oss-120b');
         expect(localStorage.getItem('ai-auto-rotate')).toBe('true');
         expect(localStorage.getItem('gemini-api-key')).toBe('secret-test-key');
         expect(localStorage.getItem('system-prompt')).toBe('Custom instructions');

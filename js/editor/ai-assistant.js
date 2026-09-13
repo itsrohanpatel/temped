@@ -172,8 +172,8 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
     }
 
     getGroqModelName() {
-        if (typeof localStorage === 'undefined') return 'llama-3.3-70b-versatile';
-        return localStorage.getItem('groq-model-name') || 'llama-3.3-70b-versatile';
+        if (typeof localStorage === 'undefined') return 'openai/gpt-oss-120b';
+        return localStorage.getItem('groq-model-name') || 'openai/gpt-oss-120b';
     }
 
     isAutoRotateEnabled() {
@@ -205,13 +205,26 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
         const preferredGroqModel = this.getGroqModelName();
         const preferredGeminiModel = this.getGeminiModelName();
 
+        let liveGroqModels = [];
+        if (typeof localStorage !== 'undefined') {
+            try {
+                const cached = JSON.parse(localStorage.getItem('groq-cached-models') || '[]');
+                if (Array.isArray(cached)) {
+                    liveGroqModels = cached.map(m => m.id).filter(Boolean);
+                }
+            } catch (_) {}
+        }
+
         const defaultGroqHierarchy = [
             preferredGroqModel,
-            'llama-3.1-8b-instant',
-            'mixtral-8x7b-32768',
-            'gemma2-9b-it',
-            'qwen-qwq-32b',
-            'deepseek-r1-distill-llama-70b'
+            ...liveGroqModels,
+            'openai/gpt-oss-120b',
+            'openai/gpt-oss-20b',
+            'qwen/qwen3.6-27b',
+            'qwen/qwen3.8-27b',
+            'groq/compound',
+            'groq/compound-mini',
+            'allam-2-7b'
         ];
 
         // Deduplicate groq hierarchy

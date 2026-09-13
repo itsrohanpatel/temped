@@ -8,12 +8,13 @@ export class GroqService {
     static GROQ_API_BASE = 'https://api.groq.com/openai/v1';
 
     static DEFAULT_MODELS = [
-        'llama-3.3-70b-versatile',
-        'llama-3.1-8b-instant',
-        'mixtral-8x7b-32768',
-        'gemma2-9b-it',
-        'qwen-qwq-32b',
-        'deepseek-r1-distill-llama-70b'
+        'openai/gpt-oss-120b',
+        'openai/gpt-oss-20b',
+        'qwen/qwen3.6-27b',
+        'qwen/qwen3.8-27b',
+        'groq/compound',
+        'groq/compound-mini',
+        'allam-2-7b'
     ];
 
     /**
@@ -63,11 +64,15 @@ export class GroqService {
             const data = await response.json();
             const rawModels = Array.isArray(data?.data) ? data.data : [];
 
-            // Filter out non-chat / audio-only models (like whisper)
+            // Filter out non-chat / audio-only / prompt-guard / terms-gated models
             const chatModels = rawModels
                 .filter(m => {
                     const id = (m.id || '').toLowerCase();
-                    return !id.includes('whisper') && !id.includes('tts') && !id.includes('transcribe');
+                    const ownedBy = (m.owned_by || '').toLowerCase();
+                    if (id.includes('whisper') || id.includes('tts') || id.includes('transcribe')) return false;
+                    if (id.includes('guard') || id.includes('safeguard')) return false;
+                    if (id.startsWith('canopylabs/') || ownedBy.includes('canopy')) return false;
+                    return true;
                 })
                 .map(m => ({
                     id: m.id,
@@ -78,12 +83,15 @@ export class GroqService {
 
             // Sort models: prioritized models first, then alphabetical
             const priorityMap = {
-                'llama-3.3-70b-versatile': 1,
-                'llama-3.1-8b-instant': 2,
-                'mixtral-8x7b-32768': 3,
-                'gemma2-9b-it': 4,
-                'qwen-qwq-32b': 5,
-                'deepseek-r1-distill-llama-70b': 6
+                'openai/gpt-oss-120b': 1,
+                'openai/gpt-oss-20b': 2,
+                'qwen/qwen3.6-27b': 3,
+                'qwen/qwen3.8-27b': 4,
+                'groq/compound': 5,
+                'groq/compound-mini': 6,
+                'allam-2-7b': 7,
+                'llama-3.3-70b-versatile': 90,
+                'llama-3.1-8b-instant': 91
             };
 
             chatModels.sort((a, b) => {
@@ -126,8 +134,15 @@ export class GroqService {
      */
     static formatModelDisplayName(id) {
         if (!id) return '';
-        if (id === 'llama-3.3-70b-versatile') return 'Llama 3.3 70B Versatile (Recommended)';
-        if (id === 'llama-3.1-8b-instant') return 'Llama 3.1 8B Instant (Ultra Fast)';
+        if (id === 'openai/gpt-oss-120b') return 'OpenAI GPT-OSS 120B (Recommended)';
+        if (id === 'openai/gpt-oss-20b') return 'OpenAI GPT-OSS 20B (Fast & Balanced)';
+        if (id === 'qwen/qwen3.6-27b') return 'Qwen 3.6 27B';
+        if (id === 'qwen/qwen3.8-27b') return 'Qwen 3.8 27B';
+        if (id === 'groq/compound') return 'Groq Compound (Agentic / Multi-tool)';
+        if (id === 'groq/compound-mini') return 'Groq Compound Mini (Ultra Fast)';
+        if (id === 'allam-2-7b') return 'Allam 2 7B';
+        if (id === 'llama-3.3-70b-versatile') return 'Llama 3.3 70B Versatile (Legacy)';
+        if (id === 'llama-3.1-8b-instant') return 'Llama 3.1 8B Instant (Legacy)';
         if (id === 'mixtral-8x7b-32768') return 'Mixtral 8x7B (32k Context)';
         if (id === 'gemma2-9b-it') return 'Gemma 2 9B Instruct';
         if (id === 'qwen-qwq-32b') return 'Qwen QwQ 32B Reasoning';
