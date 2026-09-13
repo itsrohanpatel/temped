@@ -338,6 +338,7 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 this.nodes = {
                     variablesContainer: document.getElementById('variables-container'),
                     addVariableBtn: document.getElementById('add-variable-btn'),
+                    autoDetectVarsBtn: document.getElementById('auto-detect-vars-btn'),
                     htmlInput: document.getElementById('spam-checker--textarea'),
                     emailPreview: document.getElementById('email-preview'),
                     subjectLineInput: document.getElementById('subject-line-input'),
@@ -360,6 +361,9 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
             bindEvents() {
                 // Existing events
                 this.nodes.addVariableBtn.addEventListener('click', () => this.addVariableRow());
+                if (this.nodes.autoDetectVarsBtn) {
+                    this.nodes.autoDetectVarsBtn.addEventListener('click', () => this.autoDetectVariables());
+                }
 
                 // Clean pasted HTML button
                 if (this.nodes.cleanPastedHtmlBtn) {
@@ -688,9 +692,13 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 let html = this.nodes.htmlInput.value;
                 
                 const variables = this.getVariables();
-                for (const [key, value] of variables) {
-                    const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-                    html = html.replace(regex, value);
+                if (window.VariableManager && typeof window.VariableManager.replaceVariables === 'function') {
+                    html = window.VariableManager.replaceVariables(html, variables, { wrapPills: false });
+                } else {
+                    for (const [key, value] of variables) {
+                        const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+                        html = html.replace(regex, value);
+                    }
                 }
                 
                 if (preheader && !html.includes(preheader)) {
@@ -1188,11 +1196,15 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 let template = this.nodes.htmlInput.value;
                 const variables = this.getVariables();
 
-                variables.forEach((value, name) => {
-                    const escaped = window.EmailEditorUtils ? window.EmailEditorUtils.escapeRegex(name) : name;
-                    const regex = new RegExp(`{{\\s*${escaped}\\s*}}`, 'g');
-                    template = template.replace(regex, `<span class="font-semibold text-blue-600" data-variable="${name}" contenteditable="false">${value}</span>`);
-                });
+                if (window.VariableManager && typeof window.VariableManager.replaceVariables === 'function') {
+                    template = window.VariableManager.replaceVariables(template, variables, { wrapPills: true });
+                } else {
+                    variables.forEach((value, name) => {
+                        const escaped = window.EmailEditorUtils ? window.EmailEditorUtils.escapeRegex(name) : name;
+                        const regex = new RegExp(`{{\\s*${escaped}\\s*}}`, 'g');
+                        template = template.replace(regex, `<span class="font-semibold text-blue-600" data-variable="${name}" data-original-token="{{${name}}}" contenteditable="false">${value}</span>`);
+                    });
+                }
 
                 this.nodes.recipientEmail.textContent = `${(variables.get('full_name') || 'recipient').split(' ')[0].toLowerCase()}@example.com`;
                 
@@ -1245,6 +1257,10 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 let subjectLine = this.nodes.subjectLineInput.value;
                 const variables = this.getVariables();
 
+                if (window.VariableManager && typeof window.VariableManager.replaceSubjectVariables === 'function') {
+                    return window.VariableManager.replaceSubjectVariables(subjectLine, variables);
+                }
+
                 variables.forEach((value, name) => {
                     const escaped = window.EmailEditorUtils ? window.EmailEditorUtils.escapeRegex(name) : name;
                     const regex = new RegExp(`{{\\s*${escaped}\\s*}}`, 'g');
@@ -1258,8 +1274,9 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                 const tempDiv = this.nodes.emailPreview.cloneNode(true);
 
                 tempDiv.querySelectorAll('span[data-variable]').forEach(span => {
+                    const originalToken = span.getAttribute('data-original-token');
                     const name = span.getAttribute('data-variable');
-                    span.replaceWith(`{{${name}}}`);
+                    span.replaceWith(originalToken || `{{${name}}}`);
                 });
                 // Remove spam highlight marks before syncing back to source
                 tempDiv.querySelectorAll('mark').forEach(mark => {
@@ -1312,6 +1329,83 @@ Analyze the provided EMAIL_HTML and replace specific spam-trigger words/phrases 
                     row.remove();
                     updateHandler();
                 });
+            },
+
+            autoDetectVariables() {
+                const html = this.nodes.htmlInput ? this.nodes.htmlInput.value : '';
+                const subject = this.nodes.subjectLineInput ? this.nodes.subjectLineInput.value : '';
+                const preheader = this.nodes.preheaderInput ? this.nodes.preheaderInput.value : '';
+                const fullText = `${subject}\n${preheader}\n${html}`;
+
+                const defs = window.VariableManager && typeof window.VariableManager.extractVariableDefinitions === 'function'
+                    ? window.VariableManager.extractVariableDefinitions(fullText)
+                    : this.extractVariableDefinitionsFallback(fullText);
+
+                if (!defs || defs.length === 0) {
+                    this.showNotification('No template variables detected. Use {{variable_name}} syntax.', 'info');
+                    return;
+                }
+
+                const existingVars = this.getVariables();
+                let addedCount = 0;
+
+                defs.forEach(def => {
+                    if (!existingVars.has(def.name)) {
+                        this.addVariableRow(def.name, def.defaultValue || '');
+                        existingVars.set(def.name, def.defaultValue || '');
+                        addedCount++;
+                    } else if (def.defaultValue && !existingVars.get(def.name)) {
+                        this.nodes.variablesContainer.querySelectorAll('.variable-row').forEach(row => {
+                            const nameInput = row.querySelector('.variable-name');
+                            const valInput = row.querySelector('.variable-value');
+                            if (nameInput && valInput && nameInput.value.trim() === def.name && !valInput.value) {
+                                valInput.value = def.defaultValue;
+                            }
+                        });
+                        existingVars.set(def.name, def.defaultValue);
+                    }
+                });
+
+                this.renderPreview();
+                this.renderSubjectLine();
+                this.saveToLocalStorage();
+
+                if (addedCount > 0) {
+                    this.showNotification(`Auto-detected ${addedCount} template variable${addedCount > 1 ? 's' : ''}!`);
+                } else {
+                    this.showNotification(`All ${defs.length} template variables are already added.`, 'info');
+                }
+            },
+
+            extractVariableDefinitionsFallback(text) {
+                if (!text) return [];
+                const regex = /{{\s*([\w.-]+)(?:\s*\|\s*([^{}]+?))?\s*}}/g;
+                const map = new Map();
+                let match;
+                while ((match = regex.exec(text)) !== null) {
+                    const token = match[0];
+                    const key = match[1].trim();
+                    const remainder = match[2] ? match[2].trim() : '';
+                    if (!map.has(key)) {
+                        let defaultValue = '';
+                        let options = [];
+                        if (remainder) {
+                            const parts = remainder.split('|').map(p => p.trim()).filter(Boolean);
+                            if (parts.length > 1) {
+                                defaultValue = key;
+                                options = [key, ...parts];
+                            } else if (key.includes('_') || key.includes('-') || /^(first|last|full|user|company|client|customer|sender|recipient|contact)/i.test(key)) {
+                                defaultValue = parts[0];
+                                options = [parts[0]];
+                            } else {
+                                defaultValue = key;
+                                options = [key, parts[0]];
+                            }
+                        }
+                        map.set(key, { token, name: key, defaultValue, options });
+                    }
+                }
+                return Array.from(map.values());
             },
 
             copyHtmlToClipboard() {

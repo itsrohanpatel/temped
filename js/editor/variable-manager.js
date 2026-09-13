@@ -5,7 +5,11 @@
 (function(window) {
     'use strict';
 
+    const TOKEN_REGEX = /{{\s*([\w.-]+)(?:\s*\|\s*([^{}]+?))?\s*}}/g;
+
     const VariableManager = {
+        TOKEN_REGEX,
+
         getVariables(containerEl) {
             const variables = new Map();
             if (!containerEl) return variables;
@@ -53,49 +57,129 @@
             return row;
         },
 
+        extractVariableDefinitions(text) {
+            if (!text || typeof text !== 'string') return [];
+            const regex = new RegExp(TOKEN_REGEX.source, 'g');
+            const map = new Map();
+            let match;
+
+            while ((match = regex.exec(text)) !== null) {
+                const token = match[0];
+                const key = match[1].trim();
+                const remainder = match[2] ? match[2].trim() : '';
+
+                if (!map.has(key)) {
+                    let defaultValue = '';
+                    let options = [];
+
+                    if (remainder) {
+                        const parts = remainder.split('|').map(p => p.trim()).filter(Boolean);
+                        if (parts.length > 1) {
+                            defaultValue = key;
+                            options = [key, ...parts];
+                        } else if (key.includes('_') || key.includes('-') || /^(first|last|full|user|company|client|customer|sender|recipient|contact)/i.test(key)) {
+                            defaultValue = parts[0];
+                            options = [parts[0]];
+                        } else {
+                            defaultValue = key;
+                            options = [key, parts[0]];
+                        }
+                    }
+
+                    map.set(key, {
+                        token,
+                        name: key,
+                        defaultValue,
+                        options
+                    });
+                }
+            }
+
+            return Array.from(map.values());
+        },
+
+        extractPlaceholders(html) {
+            if (!html) return [];
+            const defs = this.extractVariableDefinitions(html);
+            return defs.map(d => d.name);
+        },
+
+        resolveTokenValue(key, remainder, variables) {
+            const cleanKey = key.trim();
+            if (variables && variables.has(cleanKey) && variables.get(cleanKey) !== '') {
+                return variables.get(cleanKey);
+            }
+            if (remainder) {
+                const parts = remainder.split('|').map(p => p.trim()).filter(Boolean);
+                if (parts.length > 1) {
+                    return cleanKey;
+                } else if (cleanKey.includes('_') || cleanKey.includes('-') || /^(first|last|full|user|company|client|customer|sender|recipient|contact)/i.test(cleanKey)) {
+                    return parts[0];
+                } else {
+                    return cleanKey;
+                }
+            }
+            if (variables && variables.has(cleanKey)) {
+                return variables.get(cleanKey);
+            }
+            return null;
+        },
+
         replaceVariables(template, variables, options = {}) {
             if (!template) return '';
             const wrapPills = options.wrapPills !== false;
             let result = template;
 
-            if (!variables || !(variables instanceof Map)) return result;
-
-            variables.forEach((val, key) => {
-                const escapedKey = window.EmailEditorUtils ? window.EmailEditorUtils.escapeRegex(key) : key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(`{{\\s*${escapedKey}\\s*}}`, 'g');
-                if (wrapPills) {
-                    result = result.replace(regex, `<span class="font-semibold text-blue-600" data-variable="${key}" contenteditable="false">${val}</span>`);
-                } else {
-                    result = result.replace(regex, val);
+            const regex = new RegExp(TOKEN_REGEX.source, 'g');
+            result = result.replace(regex, (rawToken, key, remainder) => {
+                const resolved = this.resolveTokenValue(key, remainder, variables);
+                if (resolved === null) {
+                    return rawToken;
                 }
+
+                if (wrapPills) {
+                    const safeToken = window.EmailEditorUtils ? window.EmailEditorUtils.escapeAttr(rawToken) : rawToken.replace(/"/g, '&quot;');
+                    const safeKey = window.EmailEditorUtils ? window.EmailEditorUtils.escapeAttr(key) : key.replace(/"/g, '&quot;');
+                    return `<span class="font-semibold text-blue-600" data-variable="${safeKey}" data-original-token="${safeToken}" contenteditable="false">${resolved}</span>`;
+                }
+                return resolved;
             });
+
+            // Secondary pass for any remaining custom variables explicitly in the Map
+            if (variables && variables instanceof Map) {
+                variables.forEach((val, key) => {
+                    const escapedKey = window.EmailEditorUtils ? window.EmailEditorUtils.escapeRegex(key) : key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const simpleRegex = new RegExp(`{{\\s*${escapedKey}\\s*}}`, 'g');
+                    if (wrapPills) {
+                        result = result.replace(simpleRegex, `<span class="font-semibold text-blue-600" data-variable="${key}" data-original-token="{{${key}}}" contenteditable="false">${val}</span>`);
+                    } else {
+                        result = result.replace(simpleRegex, val);
+                    }
+                });
+            }
 
             return result;
         },
 
         replaceSubjectVariables(subject, variables) {
             if (!subject) return '';
-            if (!variables || !(variables instanceof Map)) return subject;
             let result = subject;
 
-            variables.forEach((val, key) => {
-                const escapedKey = window.EmailEditorUtils ? window.EmailEditorUtils.escapeRegex(key) : key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(`{{\\s*${escapedKey}\\s*}}`, 'g');
-                result = result.replace(regex, val);
+            const regex = new RegExp(TOKEN_REGEX.source, 'g');
+            result = result.replace(regex, (rawToken, key, remainder) => {
+                const resolved = this.resolveTokenValue(key, remainder, variables);
+                return resolved !== null ? resolved : rawToken;
             });
+
+            if (variables && variables instanceof Map) {
+                variables.forEach((val, key) => {
+                    const escapedKey = window.EmailEditorUtils ? window.EmailEditorUtils.escapeRegex(key) : key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const simpleRegex = new RegExp(`{{\\s*${escapedKey}\\s*}}`, 'g');
+                    result = result.replace(simpleRegex, val);
+                });
+            }
 
             return result;
-        },
-
-        extractPlaceholders(html) {
-            if (!html) return [];
-            const matches = html.match(/{{\s*([\w.-]+)(?:\|[^{}]+)?\s*}}/g) || [];
-            const names = new Set();
-            matches.forEach(m => {
-                const clean = m.replace(/^{{\s*/, '').replace(/\s*}}$/, '').split('|')[0].trim();
-                if (clean) names.add(clean);
-            });
-            return Array.from(names);
         }
     };
 

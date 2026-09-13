@@ -137,5 +137,42 @@ describe('EmailEditor Orchestrator (editor-app.js)', () => {
             // sizeDisplay should not naively interpolate undefined
             expect(fileContent).not.toMatch(/sizeDisplay\.textContent\s*=\s*`\(\$\{report\.checks\.size\.formattedSize\}\)`/);
         });
+
+        it('wires autoDetectVarsBtn and contains autoDetectVariables method', () => {
+            const filePath = path.resolve(__dirname, '../js/editor/editor-app.js');
+            const fileContent = fs.readFileSync(filePath, 'utf-8');
+            expect(fileContent).toContain('autoDetectVarsBtn');
+            expect(fileContent).toContain('autoDetectVariables');
+        });
+
+        it('autoDetectVariables populates variable rows from user template content', () => {
+            const userTemplate = `
+{{Hi|Hey|Hello}} {{full_name}},
+
+Saw free guarantee 100% that {{company_name}} is hiring - reaching out from RK HR Management...
+{{Thanks|Regards|Best}},
+{{sender-name}} | 84606 62200
+            `;
+
+            // Test VariableManager extraction logic for this user template
+            const vmPath = path.resolve(__dirname, '../js/editor/variable-manager.js');
+            const vmCode = fs.readFileSync(vmPath, 'utf-8');
+            const sandbox = { window: {} };
+            new Function('window', vmCode)(sandbox.window);
+            const VM = sandbox.window.VariableManager;
+
+            const defs = VM.extractVariableDefinitions(userTemplate);
+            const names = defs.map(d => d.name);
+            expect(names).toEqual(['Hi', 'full_name', 'company_name', 'Thanks', 'sender-name']);
+
+            const hiDef = defs.find(d => d.name === 'Hi');
+            expect(hiDef.defaultValue).toBe('Hi');
+
+            const thanksDef = defs.find(d => d.name === 'Thanks');
+            expect(thanksDef.defaultValue).toBe('Thanks');
+
+            const senderDef = defs.find(d => d.name === 'sender-name');
+            expect(senderDef.name).toBe('sender-name');
+        });
     });
 });

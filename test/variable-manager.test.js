@@ -88,4 +88,97 @@ describe('VariableManager Subsystem Tests', () => {
         const subject = 'Your {{ discount }} off coupon';
         expect(VariableManager.replaceSubjectVariables(subject, variables)).toBe('Your 50% off coupon');
     });
+
+    it('extractPlaceholders extracts unique placeholder keys including hyphens, underscores and spintax', () => {
+        const text = `{{Hi|Hey|Hello}} {{full_name}}, {{company_name}} {{Thanks|Regards|Best}} {{sender-name}}`;
+        const names = VariableManager.extractPlaceholders(text);
+        expect(names).toEqual(['Hi', 'full_name', 'company_name', 'Thanks', 'sender-name']);
+    });
+
+    it('extractVariableDefinitions returns structured tokens with defaultValue and options', () => {
+        const text = `{{Hi|Hey|Hello}} {{full_name}}, {{company_name}} - {{Thanks|Regards|Best}}, {{sender-name}} {{first_name|there}}`;
+        const defs = VariableManager.extractVariableDefinitions(text);
+        expect(defs).toEqual([
+            {
+                token: '{{Hi|Hey|Hello}}',
+                name: 'Hi',
+                defaultValue: 'Hi',
+                options: ['Hi', 'Hey', 'Hello']
+            },
+            {
+                token: '{{full_name}}',
+                name: 'full_name',
+                defaultValue: '',
+                options: []
+            },
+            {
+                token: '{{company_name}}',
+                name: 'company_name',
+                defaultValue: '',
+                options: []
+            },
+            {
+                token: '{{Thanks|Regards|Best}}',
+                name: 'Thanks',
+                defaultValue: 'Thanks',
+                options: ['Thanks', 'Regards', 'Best']
+            },
+            {
+                token: '{{sender-name}}',
+                name: 'sender-name',
+                defaultValue: '',
+                options: []
+            },
+            {
+                token: '{{first_name|there}}',
+                name: 'first_name',
+                defaultValue: 'there',
+                options: ['there']
+            }
+        ]);
+    });
+
+    it('replaceVariables resolves spintax and fallbacks to default option when unset in map', () => {
+        const text = '{{Hi|Hey|Hello}} {{full_name}}, {{Thanks|Regards|Best}} {{sender-name}}';
+        const variables = new Map([
+            ['full_name', 'Rahul'],
+            ['sender-name', 'Rohan Patel']
+        ]);
+
+        const rendered = VariableManager.replaceVariables(text, variables, { wrapPills: false });
+        expect(rendered).toBe('Hi Rahul, Thanks Rohan Patel');
+    });
+
+    it('replaceVariables uses mapped value if set for spintax variable', () => {
+        const text = '{{Hi|Hey|Hello}} {{full_name}}!';
+        const variables = new Map([
+            ['Hi', 'Hey'],
+            ['full_name', 'Rahul']
+        ]);
+
+        const rendered = VariableManager.replaceVariables(text, variables, { wrapPills: false });
+        expect(rendered).toBe('Hey Rahul!');
+    });
+
+    it('replaceVariables includes data-original-token attribute when wrapPills is true', () => {
+        const text = '{{Hi|Hey|Hello}} {{sender-name}}';
+        const variables = new Map([['sender-name', 'Alice']]);
+
+        const rendered = VariableManager.replaceVariables(text, variables, { wrapPills: true });
+        expect(rendered).toContain('data-original-token="{{Hi|Hey|Hello}}"');
+        expect(rendered).toContain('data-variable="Hi"');
+        expect(rendered).toContain('>Hi</span>');
+        expect(rendered).toContain('data-original-token="{{sender-name}}"');
+        expect(rendered).toContain('data-variable="sender-name"');
+        expect(rendered).toContain('>Alice</span>');
+    });
+
+    it('replaceSubjectVariables resolves spintax and fallbacks correctly', () => {
+        const subject = '{{Hi|Hey}} {{full_name}} - inquiry for {{company_name}}';
+        const variables = new Map([
+            ['full_name', 'Rahul'],
+            ['company_name', 'Infosys']
+        ]);
+        expect(VariableManager.replaceSubjectVariables(subject, variables)).toBe('Hi Rahul - inquiry for Infosys');
+    });
 });
