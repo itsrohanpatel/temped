@@ -169,6 +169,58 @@ describe('GroqService', () => {
                 expect(err.message).toContain('Rate limit');
             }
         });
+
+        it('should pass reasoning_effort: low for gpt-oss models', async () => {
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    choices: [
+                        { message: { role: 'assistant', content: '{"status":"ok"}' } }
+                    ]
+                })
+            });
+
+            await GroqService.generateChatCompletion({
+                apiKey: 'gsk-key',
+                model: 'openai/gpt-oss-120b',
+                messages: [{ role: 'user', content: 'Hello' }],
+                fetchFn: mockFetch
+            });
+
+            expect(mockFetch).toHaveBeenCalled();
+            const calledBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(calledBody.model).toBe('openai/gpt-oss-120b');
+            expect(calledBody.reasoning_effort).toBe('low');
+        });
+
+        it('should fallback to message.reasoning if message.content is empty', async () => {
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    choices: [
+                        {
+                            message: {
+                                role: 'assistant',
+                                content: '',
+                                reasoning: 'free -> complimentary\nact now -> get started'
+                            },
+                            finish_reason: 'length'
+                        }
+                    ]
+                })
+            });
+
+            const result = await GroqService.generateChatCompletion({
+                apiKey: 'gsk-key',
+                model: 'openai/gpt-oss-120b',
+                messages: [{ role: 'user', content: 'Rewrite' }],
+                fetchFn: mockFetch
+            });
+
+            expect(result).toBe('free -> complimentary\nact now -> get started');
+        });
     });
 
     describe('cleanOutput', () => {

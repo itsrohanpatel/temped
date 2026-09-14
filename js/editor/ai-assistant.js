@@ -87,9 +87,9 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
 ### CRITICAL RULES
 1. **OUTPUT FORMAT:** Return ONLY a valid JSON array of replacement objects: [{"from": "original_term", "to": "safer_alternative"}].
 2. **NO CODE FENCES OR TEXT:** Do NOT wrap in markdown code fences (no \`\`\`json). Do NOT add explanations, notes, or chit-chat. Output raw JSON only.
-3. **BETTER ALTERNATIVE:** The "to" replacement MUST be a natural, deliverable, non-spam alternative. Never return the same word.
+3. **BETTER ALTERNATIVE:** The "to" replacement MUST be a natural, deliverable, non-spam alternative that fits the email context. Never return the same word.
 4. **STANDALONE ONLY:** Replace only standalone words and phrases. NEVER modify HTML tags, attribute names, href URLs, or template variables (e.g. {{name}}).
-5. **OMIT UNNECESSARY:** If a term cannot be improved meaningfully, omit it from the array.
+5. **REPLACE EVERY MATCH:** For each term in TERMS TO REPLACE that appears in the email, provide a professional, deliverable replacement that fits naturally into the sentence.
 
 ### TERMS TO REPLACE
 {terms}
@@ -300,13 +300,13 @@ Analyze the provided email content and replace spam-trigger words and phrases fr
         let lastError = null;
 
         const featureMaxTokens = {
-            optimize: 800,
-            suggest: 500,
-            tone: 800,
-            subject: 250,
-            rewrite: 500
+            optimize: 1000,
+            suggest: 600,
+            tone: 1000,
+            subject: 300,
+            rewrite: 1200
         };
-        const safeMaxTokens = featureMaxTokens[feature] || 800;
+        const safeMaxTokens = featureMaxTokens[feature] || 1000;
 
         for (let i = 0; i < activeCandidates.length; i++) {
             const candidate = activeCandidates[i];

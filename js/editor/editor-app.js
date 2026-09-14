@@ -3369,18 +3369,29 @@ Your responses must always be:
         EmailEditor.confirmSpamRewrite = async function() {
             const input = document.getElementById('spam-words-input');
             const userList = (input?.value || '').trim();
-            let terms = userList ? userList.split(',').map(s => s.trim()).filter(Boolean) : [];
+            let rawTerms = userList ? userList.split(',').map(s => s.trim()).filter(Boolean) : [];
             
             // If empty, auto-detect from current preview spam keywords as indicated in modal placeholder
-            if (terms.length === 0) {
+            if (rawTerms.length === 0) {
                 this.renderPreview();
-                terms = this.collectCurrentSpamKeywords();
+                rawTerms = this.collectCurrentSpamKeywords();
             }
 
-            if (terms.length === 0) { 
+            if (rawTerms.length === 0) { 
                 this.hideSpamRewriteModal();
                 this.showNotification('No spam words detected or provided to rewrite'); 
                 return; 
+            }
+
+            // Case-insensitive deduplication while preserving original casing
+            const seenTerms = new Set();
+            const terms = [];
+            for (const t of rawTerms) {
+                const lower = t.toLowerCase();
+                if (!seenTerms.has(lower)) {
+                    seenTerms.add(lower);
+                    terms.push(t);
+                }
             }
             
             this.hideSpamRewriteModal();
@@ -3390,10 +3401,53 @@ Your responses must always be:
             this.incrementRequestCount();
             this.showAILoading();
             try {
-                const text = await this.callAIAssistant('rewrite', { content, terms: JSON.stringify(terms) }) || '';
-                const mapping = this.parseReplacementMapping(text);
-                if (!Array.isArray(mapping)) {
-                    throw new Error('Invalid response format from AI');
+                // Chunk terms into batches of 3 to maximize LLM accuracy, prevent token truncation,
+                // and avoid model confusion on large term lists.
+                const BATCH_SIZE = 3;
+                const batches = [];
+                for (let i = 0; i < terms.length; i += BATCH_SIZE) {
+                    batches.push(terms.slice(i, i + BATCH_SIZE));
+                }
+
+                const allMappings = [];
+                let anyBatchSucceeded = false;
+                let lastBatchError = null;
+
+                for (let b = 0; b < batches.length; b++) {
+                    const batch = batches[b];
+                    if (batches.length > 1) {
+                        this.showNotification(`Rewriting spam words (batch ${b + 1} of ${batches.length})...`);
+                    }
+
+                    try {
+                        const text = await this.callAIAssistant('rewrite', { content, terms: JSON.stringify(batch) }) || '';
+                        const batchMapping = this.parseReplacementMapping(text);
+                        if (Array.isArray(batchMapping)) {
+                            allMappings.push(...batchMapping);
+                            anyBatchSucceeded = true;
+                        }
+                    } catch (batchErr) {
+                        lastBatchError = batchErr;
+                        console.warn(`Spam rewrite batch ${b + 1} failed:`, batchErr);
+                    }
+                }
+
+                // If all batches failed, throw the error to show failure state
+                if (!anyBatchSucceeded && lastBatchError) {
+                    throw lastBatchError;
+                }
+
+                // Deduplicate mapping pairs by original term
+                const mapping = [];
+                const seenFrom = new Set();
+                for (const item of allMappings) {
+                    if (item && typeof item.from === 'string' && typeof item.to === 'string') {
+                        const key = item.from.trim().toLowerCase();
+                        if (!seenFrom.has(key)) {
+                            seenFrom.add(key);
+                            mapping.push({ from: item.from.trim(), to: item.to.trim() });
+                        }
+                    }
                 }
 
                 // If no replacements were returned or needed (empty array [] from model)
@@ -3479,16 +3533,49 @@ Your responses must always be:
                 const jsonStart = cleaned.indexOf('[');
                 const jsonEnd = cleaned.lastIndexOf(']');
                 if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd >= jsonStart) {
-                    const arr = JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1));
+                    const jsonSlice = cleaned.slice(jsonStart, jsonEnd + 1)
+                        .replace(/,\s*([\]}])/g, '$1'); // clean trailing commas before ] or }
+                    const arr = JSON.parse(jsonSlice);
                     return (Array.isArray(arr) ? arr : []).filter(x => x && typeof x.from === 'string' && typeof x.to === 'string');
                 }
             } catch(_) {}
-            // fallback: line format "from -> to"
+
+            // Regex fallback to extract {"from": "...", "to": "..."} pairs if JSON.parse failed (e.g. truncated or minor syntax error)
+            try {
+                const pairs = [];
+                const regexFromTo = /\{[^{}]*?["']?from["']?\s*:\s*["']([^"']+)["'][^{}]*?["']?to["']?\s*:\s*["']([^"']+)["'][^{}]*?(?:\}|$)/gi;
+                let match;
+                while ((match = regexFromTo.exec(text)) !== null) {
+                    if (match[1] && match[2]) {
+                        pairs.push({ from: match[1].trim(), to: match[2].trim() });
+                    }
+                }
+                if (pairs.length === 0) {
+                    const regexToFrom = /\{[^{}]*?["']?to["']?\s*:\s*["']([^"']+)["'][^{}]*?["']?from["']?\s*:\s*["']([^"']+)["'][^{}]*?(?:\}|$)/gi;
+                    while ((match = regexToFrom.exec(text)) !== null) {
+                        if (match[1] && match[2]) {
+                            pairs.push({ from: match[2].trim(), to: match[1].trim() });
+                        }
+                    }
+                }
+                if (pairs.length > 0) return pairs;
+            } catch(_) {}
+
+            // fallback: line format "from -> to", "- from -> to", or "from: to"
             const lines = text.split(/\r?\n/);
             const pairs = [];
             lines.forEach(line => {
-                const m = line.match(/^(.+?)\s*->\s*(.+)$/);
-                if (m) pairs.push({ from: m[1].trim(), to: m[2].trim() });
+                const m = line.match(/^(.+?)\s*(?:->|=>|:)\s*(.+)$/);
+                if (m) {
+                    let from = m[1].replace(/^[-*•\d.)\]\s]+/, '').trim().replace(/^["']|["']$/g, '');
+                    let to = m[2].trim().replace(/^["']|["']$/g, '');
+                    // Handle choices like "possibility" or "potential"
+                    if (/\s+or\s+/i.test(to)) to = to.split(/\s+or\s+/i)[0].trim().replace(/^["']|["']$/g, '');
+                    if (/\s+\/\s+/.test(to)) to = to.split(/\s+\/\s+/)[0].trim().replace(/^["']|["']$/g, '');
+                    if (from && to && !from.toLowerCase().includes('http') && !from.toLowerCase().includes('subject')) {
+                        pairs.push({ from, to });
+                    }
+                }
             });
             return pairs;
         };
@@ -3524,7 +3611,7 @@ Your responses must always be:
                         const pat = new RegExp(`\\b${escapeRegex(candidate)}\\b`, 'gi');
                         const matches = innerHTML.match(pat);
                         if (matches) {
-                            innerHTML = innerHTML.replace(pat, to);
+                            innerHTML = innerHTML.replace(pat, () => to);
                             count += matches.length;
                             replacedInHTML = true;
                             break;
@@ -3534,7 +3621,7 @@ Your responses must always be:
                         const pat = new RegExp(toFlexibleSpace(escapeRegex(candidate)), 'gi');
                         const matches = innerHTML.match(pat);
                         if (matches) {
-                            innerHTML = innerHTML.replace(pat, to);
+                            innerHTML = innerHTML.replace(pat, () => to);
                             count += matches.length;
                             replacedInHTML = true;
                             break;
@@ -3547,7 +3634,7 @@ Your responses must always be:
                     const fallback = new RegExp(escapeRegex(from), 'gi');
                     const matches = innerHTML.match(fallback);
                     if (matches) {
-                        innerHTML = innerHTML.replace(fallback, to);
+                        innerHTML = innerHTML.replace(fallback, () => to);
                         count += matches.length;
                     }
                 }
@@ -3635,7 +3722,7 @@ Your responses must always be:
                         const pat = new RegExp(`\\b${escapeRegex(candidate)}\\b`, 'gi');
                         const matches = updatedHTML.match(pat);
                         if (matches) {
-                            updatedHTML = updatedHTML.replace(pat, to);
+                            updatedHTML = updatedHTML.replace(pat, () => to);
                             count += matches.length;
                             replacedInHTML = true;
                             break;
@@ -3645,7 +3732,7 @@ Your responses must always be:
                         const pat = new RegExp(toFlexibleSpace(escapeRegex(candidate)), 'gi');
                         const matches = updatedHTML.match(pat);
                         if (matches) {
-                            updatedHTML = updatedHTML.replace(pat, to);
+                            updatedHTML = updatedHTML.replace(pat, () => to);
                             count += matches.length;
                             replacedInHTML = true;
                             break;
@@ -3658,7 +3745,7 @@ Your responses must always be:
                     const fallback = new RegExp(escapeRegex(from), 'gi');
                     const matches = updatedHTML.match(fallback);
                     if (matches) {
-                        updatedHTML = updatedHTML.replace(fallback, to);
+                        updatedHTML = updatedHTML.replace(fallback, () => to);
                         count += matches.length;
                     }
                 }

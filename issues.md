@@ -4,7 +4,7 @@ This document tracks all bugs, usability issues, and security vulnerabilities id
 
 ---
 
-## 🟢 Audit Status: All 17 Issues Fully Resolved & Tested
+## 🟢 Audit Status: All 23 Issues Fully Resolved & Tested
 
 | ID | Category | Severity | Issue Description | Resolution Status | Test Coverage |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -26,6 +26,11 @@ This document tracks all bugs, usability issues, and security vulnerabilities id
 | **#16** | Diagnostics / UI | 🟡 Medium | Health score badge had no click listener & preflight size was `(undefined)` | **Resolved** (Wired health modal show/hide listeners and provided `formattedSize` from checkHtmlSize) | `test/editor-app.test.js`, `test/preflight-inspector.test.js` |
 | **#17** | AI / Orchestration | 🔴 High | AI Assistant ignored pre-rendered prompts and explicit temperatures | **Resolved** (Updated `generateWithFallback` to honor explicit `prompt`, `...variables`, and `temperature`) | `test/ai-assistant.test.js` |
 | **#18** | Editor / Features | 🔴 High | Unwired preheader input, viewport switchers, dark mode toggle, and quick copy toolbar buttons | **Resolved** (Added nodes to `queryNodes`, wired listeners, preheader storage/preflight passing, and typography rules) | `test/editor-app.test.js` |
+| **#19** | AI / Reliability | 🔴 High | Groq 1,000 OTPM limit exceeded & reasoning tags leaking into output | **Resolved** (Feature-based dynamic token caps, reasoning cleaner, and hardened prompt templates) | `test/groq-service.test.js`, `test/ai-assistant.test.js` |
+| **#20** | Sanitization / HTML | 🔴 High | Tailwind CSS variables (`--tw-*`), utility classes & bold span paste bloat | **Resolved** (Preserved semantic `<strong>`, stripped all `--tw-*` custom properties & utility classes) | `test/utils.test.js` |
+| **#21** | Spintax / Testing | 🟡 Medium | Static variable fallbacks without dynamic spintax testing | **Resolved** (Recursive permutation counter, randomizer roller, and interactive preview dice toggle) | `test/spintax-randomizer.test.js` |
+| **#22** | UI / Efficiency | 🟡 Medium | Squished toolbar on small viewports, slow variable entry & manual syntax typing | **Resolved** (Wrapping header, bulk variable importer with presets, and slash `/` & `{{` autocomplete) | `test/variable-manager.test.js` |
+| **#23** | AI / Spam Rewrite | 🔴 High | Rewrite failed on 10+ detected terms; required manual 3-at-a-time input | **Resolved** (Automated 3-term batching, case-insensitive deduplication, resilient JSON parser & lambda safe replacement) | `test/editor-app.test.js` |
 
 ---
 
@@ -124,9 +129,25 @@ This document tracks all bugs, usability issues, and security vulnerabilities id
      - **Full Keyboard & Toolbar Integration**: Full `ArrowUp`, `ArrowDown`, `Enter`, `Tab`, and `Escape` keyboard handling across both surfaces, context indicator badge (`HTML` vs `PREVIEW`), and quick `{/}` toolbar trigger (`#insert-variable-quick-btn`) targeting whichever editor was last active.
   4. **Automated Testing**: Added unit tests in `test/variable-manager.test.js`, bringing the test suite to 213 passing tests across 17 test files.
 
+### 18. Spam Word Rewrite 3-Word Batching & Resilient Multi-Term Processing (#23)
+- **Problem**: When rewriting spam words for emails with multiple detected trigger phrases (e.g., 10 to 30 terms like Cost, Costs, Offer, Finance, Financial, Opportunity, Rate, Sales, Marketing, For you), passing all terms in a single AI request caused failures (due to LLM token budget truncation, model confusion/dropping words, or strict JSON parse errors). Users were forced to manually enter 3 words at a time into the input box to make it work.
+- **Implementation**:
+  1. **Automated 3-Word Chunking (`BATCH_SIZE = 3`)**: Automatically partitions any number of detected or custom spam terms into batches of 3, executing focused AI rewrite requests sequentially with user-facing progress updates (`Rewriting spam words (batch X of Y)...`).
+  2. **Case-Insensitive Deduplication**: Normalizes and deduplicates terms prior to batching to avoid sending duplicate tokens to the LLM.
+  3. **Multi-Batch Aggregation**: Combines and deduplicates mappings from all batches with partial failure tolerance so that a hiccup in one batch does not lose successful rewrites from other batches.
+  4. **Resilient JSON Parser & Bullet Fallback**: Enhanced `parseReplacementMapping` with automatic trailing-comma removal, regex extraction fallback (`{"from": "...", "to": "..."}`), and bullet-line format parsing (`- from -> "to" or "alternative"`) that cleans quotes and options directly from reasoning traces.
+  5. **Groq Reasoning Model Token Exhaustion & `reasoning_effort: 'low'`**: For reasoning models like `openai/gpt-oss-120b`, the model was generating up to 498 internal reasoning tokens, exhausting the 500-token limit and returning empty `content: ""` with `finish_reason: "length"`. We:
+     - Configured `reasoning_effort: 'low'` for `gpt-oss` models in `GroqService.generateChatCompletion`.
+     - Raised `maxTokens` for rewrite from 500 to 1200 in `ai-assistant.js`.
+     - Added automatic fallback to `message.reasoning` in `GroqService` if `content` is empty so no determinations are lost.
+  6. **Regex Safety (`() => to`)**: Changed all string replacement calls in both WYSIWYG preview and source HTML to lambda functions `() => to` to prevent accidental regex pattern substitution when replacement words contain `$`.
+  7. **Prompt Enhancement**: Updated the rewrite prompt template in `ai-assistant.js` to strictly require replacements for every matching term in the batch rather than omitting them.
+  8. **Cache-Busting Asset Versioning**: Added `?v=2.4.0` to script imports in `index.html` ensuring client browsers don't execute stale cached scripts.
+  9. **Automated Testing**: Added unit tests in `test/editor-app.test.js` and `test/groq-service.test.js`, bringing the test suite to 219 passing tests across 17 test files.
+
 ---
 
 ## 🧪 Verification
-All resolutions are verified by 213 automated Vitest unit and integration tests across 17 test files with zero failures, and clean production build with Vite.
+All resolutions are verified by 219 automated Vitest unit and integration tests across 17 test files with zero failures, and clean production build with Vite.
 
 

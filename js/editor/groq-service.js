@@ -191,18 +191,26 @@ export class GroqService {
 
         const safeTemp = Math.max(0, Math.min(2.0, typeof temperature === 'number' ? temperature : 1.0));
 
+        const reqBody = {
+            model: model.trim(),
+            messages,
+            temperature: safeTemp,
+            max_tokens: maxTokens
+        };
+
+        // For models that support reasoning_effort (like gpt-oss-120b and gpt-oss-20b),
+        // set to 'low' to minimize reasoning token overhead and maximize available tokens for completion.
+        if (model.toLowerCase().includes('gpt-oss')) {
+            reqBody.reasoning_effort = 'low';
+        }
+
         const response = await fetchFn(`${this.GROQ_API_BASE}/chat/completions`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey.trim()}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                model: model.trim(),
-                messages,
-                temperature: safeTemp,
-                max_tokens: maxTokens
-            })
+            body: JSON.stringify(reqBody)
         });
 
         if (!response.ok) {
@@ -222,7 +230,14 @@ export class GroqService {
         }
 
         const data = await response.json();
-        const content = data?.choices?.[0]?.message?.content;
+        const message = data?.choices?.[0]?.message;
+        let content = message?.content;
+
+        // If content is empty or whitespace-only, check if reasoning exists (e.g. model hit token budget in reasoning phase)
+        if ((typeof content !== 'string' || !content.trim()) && typeof message?.reasoning === 'string' && message.reasoning.trim()) {
+            content = message.reasoning;
+        }
+
         if (typeof content !== 'string') {
             throw new Error('Unexpected response structure from Groq API.');
         }

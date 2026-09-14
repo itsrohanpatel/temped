@@ -105,6 +105,26 @@ describe('EmailEditor Orchestrator (editor-app.js)', () => {
             ]);
         });
 
+        it('parses bulleted reasoning arrow format with quotes and alternative choices', () => {
+            const reasoningText = `Now need to propose safer alternatives.
+
+- opportunity -> "possibility" or "potential"
+- COSTS -> "expenses"
+- cost -> "expense"
+- financial -> "monetary"
+- Offer -> "proposal"
+- Sales -> "business development"`;
+            const result = parseReplacementMapping(reasoningText);
+            expect(result).toEqual([
+                { from: 'opportunity', to: 'possibility' },
+                { from: 'COSTS', to: 'expenses' },
+                { from: 'cost', to: 'expense' },
+                { from: 'financial', to: 'monetary' },
+                { from: 'Offer', to: 'proposal' },
+                { from: 'Sales', to: 'business development' }
+            ]);
+        });
+
         it('filters out invalid objects missing from/to strings', () => {
             const mixed = JSON.stringify([
                 { from: 'free', to: 'complimentary' },
@@ -116,6 +136,33 @@ describe('EmailEditor Orchestrator (editor-app.js)', () => {
             expect(result).toEqual([
                 { from: 'free', to: 'complimentary' }
             ]);
+        });
+
+        it('handles JSON with trailing commas gracefully', () => {
+            const trailingCommaJson = '[\n  {"from": "Cost", "to": "Investment"},\n  {"from": "Opportunity", "to": "Chance"},\n]';
+            const result = parseReplacementMapping(trailingCommaJson);
+            expect(result).toEqual([
+                { from: 'Cost', to: 'Investment' },
+                { from: 'Opportunity', to: 'Chance' }
+            ]);
+        });
+
+        it('recovers replacement pairs via regex fallback when JSON is malformed or unclosed', () => {
+            const malformedJson = '[{"from": "Offer", "to": "Proposal"}, {"from": "Financial", "to": "Fiscal"';
+            const result = parseReplacementMapping(malformedJson);
+            expect(result).toEqual([
+                { from: 'Offer', to: 'Proposal' },
+                { from: 'Financial', to: 'Fiscal' }
+            ]);
+        });
+
+        it('confirms editor-app.js batches spam word rewrite in chunks of 3 with deduplication', () => {
+            const filePath = path.resolve(__dirname, '../js/editor/editor-app.js');
+            const fileContent = fs.readFileSync(filePath, 'utf-8');
+            expect(fileContent).toContain('const BATCH_SIZE = 3;');
+            expect(fileContent).toContain('for (let i = 0; i < terms.length; i += BATCH_SIZE)');
+            expect(fileContent).toContain('seenTerms.has(lower)');
+            expect(fileContent).toContain('Rewriting spam words (batch');
         });
 
         it('confirms editor-app.js handles empty mapping without throwing', () => {
